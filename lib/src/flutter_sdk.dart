@@ -1,6 +1,7 @@
 import 'package:dcli/dcli.dart' as dcli;
 import 'package:puro_sidekick_plugin/puro_sidekick_plugin.dart';
 import 'package:sidekick_core/sidekick_core.dart';
+import 'package:yaml/yaml.dart';
 
 /// Create an empty folder for flutter sdk symlink
 String flutterSdkSymlink() {
@@ -61,3 +62,62 @@ int createSymlink(String link, String target) {
     return -1;
   }
 }
+
+/// Reads the minimum flutter version from pubspec.yaml if available
+/// If the flutter version is not available, it reads the dart sdk version
+/// and returns the lower bound of the version constraint
+/// Returns null if the version is not found
+String? getMinSdkVersionFromPubspec(Directory packagePath) {
+  try {
+    final package = DartPackage.fromDirectory(packagePath);
+    final pubspecFile = package?.pubspec;
+    if (pubspecFile == null || !pubspecFile.existsSync()) {
+      return null;
+    }
+    final pubspecYamlContent = pubspecFile.readAsStringSync();
+
+    // Check for valid package name
+    final doc = loadYamlDocument(pubspecYamlContent);
+    final pubspec = doc.contents.value as YamlMap;
+    final packageName = pubspec['name'] as String?;
+    if (packageName == null) {
+      return null;
+    }
+
+    // Check for environment
+    final environment = pubspec['environment'] as YamlMap?;
+
+    // Get flutter version if available
+    try {
+      final flutterConstraint = environment?['flutter'] as String?;
+      // Get version by Caret syntax
+      final lowerFlutterBound = flutterConstraint?..split('^')[1];
+      return lowerFlutterBound;
+    } catch (_) {}
+
+    // Get dart sdk version if flutter version is not available
+    final dartConstraint = environment?['sdk'] as String?;
+    String? lowerDartBound;
+    try {
+      lowerDartBound = dartConstraint?.split('>=')[1].split('<')[0];
+    } catch (_) {}
+
+    try {
+      // Get version by Caret syntax
+      lowerDartBound ??= dartConstraint?.split('^')[1];
+    } catch (_) {}
+
+    // TODO - Get matching Flutter version for Dart SDK version
+    return lowerDartBound;
+  } on FileSystemException catch (e) {
+    print('Error reading pubspec.yaml: $e');
+    return '';
+  } on YamlException catch (e) {
+    print('Error parsing pubspec.yaml: $e');
+    return '';
+  } catch (e) {
+    print('Unexpected error: $e');
+    return '';
+  }
+}
+
