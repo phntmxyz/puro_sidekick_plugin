@@ -1,5 +1,6 @@
 import 'package:dcli/dcli.dart' as dcli;
 import 'package:puro_sidekick_plugin/puro_sidekick_plugin.dart';
+import 'package:puro_sidekick_plugin/src/semantic_version.dart';
 import 'package:sidekick_core/sidekick_core.dart';
 import 'package:yaml/yaml.dart';
 
@@ -65,9 +66,9 @@ int createSymlink(String link, String target) {
 
 /// Reads the minimum flutter version from pubspec.yaml if available
 /// If the flutter version is not available, it reads the dart sdk version
-/// and returns the lower bound of the version constraint
+/// and returns the flutter version of the lower bound of the dart version constraint
 /// Returns null if the version is not found
-String? getMinSdkVersionFromPubspec(Directory packagePath) {
+String? getMinSdkVersionFromPubspec(Directory packagePath, {bool useBeta = false}) {
   try {
     final package = DartPackage.fromDirectory(packagePath);
     final pubspecFile = package?.pubspec;
@@ -107,8 +108,11 @@ String? getMinSdkVersionFromPubspec(Directory packagePath) {
       lowerDartBound ??= dartConstraint?.split('^')[1];
     } catch (_) {}
 
-    // TODO - Get matching Flutter version for Dart SDK version
-    return lowerDartBound;
+    if (lowerDartBound == null) {
+      return null;
+    }
+
+    return getBestFlutterVersion(lowerDartBound, useBeta: useBeta);
   } on FileSystemException catch (e) {
     print('Error reading pubspec.yaml: $e');
     return '';
@@ -121,7 +125,7 @@ String? getMinSdkVersionFromPubspec(Directory packagePath) {
   }
 }
 
-String getFlutterVersionsFromPuro() {
+String getBestFlutterVersion(String dartVersion, {bool useBeta = false}) {
   final lines = <String>[];
 
   try {
@@ -136,10 +140,11 @@ String getFlutterVersionsFromPuro() {
     print('Error getting flutter versions: $e');
   }
 
-  return lines.join('\n');
+  final allVersions = lines.join('\n');
+  return parseFlutterVersionToDartVersion(allVersions, dartVersion, useBeta: useBeta);
 }
 
-String? parseFlutterVersionToDartVersion(String versions, String dartVersion, {bool useBeta = false}) {
+String parseFlutterVersionToDartVersion(String versions, String dartVersion, {bool useBeta = false}) {
   final semanticDartVersion = SemanticVersion.fromString(dartVersion);
 
   final lines = versions.split('\n');
@@ -175,86 +180,10 @@ String? parseFlutterVersionToDartVersion(String versions, String dartVersion, {b
   }
 
   if (useBeta) {
-    for (final dartVersion in betaVersionMap.keys) {
-      if (semanticDartVersion == dartVersion) {
-        return betaVersionMap[dartVersion].toString();
-      }
-    }
+    final bestDartVersion = getBestMatchingVersion(betaVersionMap.keys.toList(), semanticDartVersion);
+    return betaVersionMap[bestDartVersion].toString();
   } else {
-    for (final dartVersion in versionMap.keys) {
-      if (semanticDartVersion == dartVersion) {
-        return versionMap[dartVersion].toString();
-      }
-    }
-  }
-
-  print(red('No matching Flutter version found for Dart version $dartVersion'));
-  return null;
-}
-
-class SemanticVersion implements Comparable<SemanticVersion> {
-  final int major;
-  final int minor;
-  final int patch;
-  final String? preRelease;
-
-  SemanticVersion._(this.major, this.minor, this.patch, this.preRelease);
-
-  factory SemanticVersion.fromString(String version) {
-    List<String> versionParts = [];
-    String? preRelease;
-
-    // Check for pre-release version
-    if (version.contains('-')) {
-      final parts = version.split('-');
-      versionParts = parts[0].split('.');
-      preRelease = parts[1];
-    } else {
-      versionParts = version.split('.');
-    }
-
-    if (versionParts.length < 3) {
-      throw ArgumentError('Invalid version string');
-    }
-    return SemanticVersion._(
-      int.parse(versionParts[0]),
-      int.parse(versionParts[1]),
-      int.parse(versionParts[2]),
-      preRelease,
-    );
-  }
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) || other is SemanticVersion && runtimeType == other.runtimeType && compareTo(other) == 0;
-
-  @override
-  int get hashCode => major.hashCode ^ minor.hashCode ^ patch.hashCode ^ preRelease.hashCode;
-
-  @override
-  String toString() {
-    if (preRelease != null) {
-      return '$major.$minor.$patch-$preRelease';
-    }
-    return '$major.$minor.$patch';
-  }
-
-  @override
-  int compareTo(SemanticVersion other) {
-    if (major != other.major) {
-      return major - other.major; // Major version comparison
-    } else if (minor != other.minor) {
-      return minor - other.minor; // Minor version comparison
-    } else if (patch != other.patch) {
-      return patch - other.patch; // Patch version comparison
-    } else if (preRelease != null && other.preRelease == null) {
-      return 1; // Stable version is considered greater than pre-release
-    } else if (preRelease == null && other.preRelease != null) {
-      return -1; // Pre-release version is considered less than stable
-    } else if (preRelease != null) {
-      // Compare pre-release versions (lexicographic comparison)
-      return preRelease!.compareTo(other.preRelease!);
-    }
-    return 0; // Versions are equal
+    final bestDartVersion = getBestMatchingVersion(versionMap.keys.toList(), semanticDartVersion);
+    return versionMap[bestDartVersion].toString();
   }
 }

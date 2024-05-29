@@ -36,4 +36,18 @@ void main() {
 
     expect(parseFlutterVersionToDartVersion(_puroLsVersions, useBeta: true, '3.4.0'), '3.22.0-0.3.pre');
   });
+
+  test('get flutter version for closest matching dart version', () {
+    // 3.0.0 is closest to 3.0.6 which is Flutter 3.10.6
+    expect(parseFlutterVersionToDartVersion(_puroLsVersions, '3.0.0'), '3.10.6');
+
+    // 3.2.0 is closest to 3.2.6 which is Flutter 3.16.9
+    expect(parseFlutterVersionToDartVersion(_puroLsVersions, '3.2.0'), '3.16.9');
+
+    // 3.3.1 is closest to 3.3.2 which is Flutter 3.19.6 (Patch version can be higher)
+    expect(parseFlutterVersionToDartVersion(_puroLsVersions, '3.3.1'), '3.19.6');
+
+    // 3.3.0 is closest to 3.3.0 which is Flutter 3.19.0-0.4.pre
+    expect(parseFlutterVersionToDartVersion(_puroLsVersions, useBeta: true, '3.3.0'), '3.19.0-0.4.pre');
+  });
 }
