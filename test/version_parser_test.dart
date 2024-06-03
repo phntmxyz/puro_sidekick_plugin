@@ -35,17 +35,17 @@ void main() {
       packagePath: Directory.current,
       puroLsVersionsProvider: () => _puroLsVersions,
     );
-    expect(parser.testParseFlutterVersionToDartVersion('3.4.1'), '3.22.1');
-    expect(parser.testParseFlutterVersionToDartVersion('3.2.6'), '3.16.9');
-    expect(parser.testParseFlutterVersionToDartVersion('3.4.1'), '3.22.1');
-    expect(parser.testParseFlutterVersionToDartVersion('2.18.6'), '3.3.10');
+    expect(parser.testGetBestFlutterVersion(dartConstraint: '3.4.1'), '3.22.1');
+    expect(parser.testGetBestFlutterVersion(dartConstraint: '3.2.6'), '3.16.9');
+    expect(parser.testGetBestFlutterVersion(dartConstraint: '3.4.1'), '3.22.1');
+    expect(parser.testGetBestFlutterVersion(dartConstraint: '2.18.6'), '3.3.10');
 
     final betaParser = VersionParser(
       packagePath: Directory.current,
       puroLsVersionsProvider: () => _puroLsVersions,
       useBeta: true,
     );
-    expect(betaParser.testParseFlutterVersionToDartVersion('3.4.0'), '3.22.0-0.3.pre');
+    expect(betaParser.testGetBestFlutterVersion(dartConstraint: '3.4.0'), '3.22.0-0.3.pre');
   });
 
   test('get best flutter version for closest matching dart version', () {
@@ -53,22 +53,49 @@ void main() {
       packagePath: Directory.current,
       puroLsVersionsProvider: () => _puroLsVersions,
     );
-    // 3.0.0 is closest to 3.0.6 which is Flutter 3.10.6
-    expect(parser.testParseFlutterVersionToDartVersion('3.0.0'), '3.10.6');
 
-    // 3.2.0 is closest to 3.2.6 which is Flutter 3.16.9
-    expect(parser.testParseFlutterVersionToDartVersion('3.2.0'), '3.16.9');
+    // 3.16.9 is exact match
+    expect(parser.testGetBestFlutterVersion(flutterConstraint: '3.16.9'), '3.16.9');
 
-    // 3.3.1 is closest to 3.3.2 which is Flutter 3.19.6 (Patch version can be higher)
-    expect(parser.testParseFlutterVersionToDartVersion('3.3.1'), '3.19.6');
+    // ^3.0.0 is max minor version which is Flutter 3.22.1
+    expect(parser.testGetBestFlutterVersion(flutterConstraint: '^3.0.0'), '3.22.1');
+
+    // >=3.0.0 <4.0.0 is max version <4 =  3.4.1 which is Flutter 3.22.1
+    expect(parser.testGetBestFlutterVersion(flutterConstraint: '>=3.0.0 <4.0.0'), '3.22.1');
+
+    // <3.20.0 is closest to Flutter 3.19.6
+    expect(parser.testGetBestFlutterVersion(flutterConstraint: '<3.20.0'), '3.19.6');
+  });
+
+  test('get best flutter version for flutter version constraint', () {
+    final parser = VersionParser(
+      packagePath: Directory.current,
+      puroLsVersionsProvider: () => _puroLsVersions,
+    );
+    // ^3.0.0 is max minor version = 3.4.1 which is Flutter 3.22.1
+    expect(parser.testGetBestFlutterVersion(dartConstraint: '^3.0.0'), '3.22.1');
+
+    // >=3.0.0 <4.0.0 is max version <4 =  3.4.1 which is Flutter 3.22.1
+    expect(parser.testGetBestFlutterVersion(dartConstraint: '>=3.0.0 <4.0.0'), '3.22.1');
+
+    // <3.4.0 is closest to 3.3.4 which is Flutter 3.19.6
+    expect(parser.testGetBestFlutterVersion(dartConstraint: '<3.4.0'), '3.19.6');
 
     final betaParser = VersionParser(
       packagePath: Directory.current,
       puroLsVersionsProvider: () => _puroLsVersions,
       useBeta: true,
     );
-    // 3.3.0 is closest to 3.3.0 which is Flutter 3.19.0-0.4.pre
-    expect(betaParser.testParseFlutterVersionToDartVersion('3.3.0'), '3.19.0-0.4.pre');
+    // ^3.3.0 is max minor version = 3.4.0 which is Flutter 3.22.0-0.3.pre
+    expect(betaParser.testGetBestFlutterVersion(dartConstraint: '^3.3.0'), '3.22.0-0.3.pre');
+  });
+
+  test('return null when no matching version is available', () {
+    final parser = VersionParser(
+      packagePath: Directory.current,
+      puroLsVersionsProvider: () => _puroLsVersions,
+    );
+    expect(parser.testGetBestFlutterVersion(dartConstraint: '>=4.0.0'), null);
   });
 
   test('get best flutter version for sdk based pubspec', () {
@@ -85,8 +112,8 @@ environment:
       puroLsVersionsProvider: () => _puroLsVersions,
     );
 
-    // 3.0.0 is closest to 3.0.6 which is Flutter 3.10.6
-    expect(parser.getMinSdkVersionFromPubspec(), '3.10.6');
+    // >=3.0.0 <4.0.0 is max version <4 =  3.4.1 which is Flutter 3.22.1
+    expect(parser.getMaxFlutterSdkVersionFromPubspec(), '3.22.1');
   });
 
   test('get best flutter version for caret sdk based pubspec', () {
@@ -103,8 +130,8 @@ environment:
       puroLsVersionsProvider: () => _puroLsVersions,
     );
 
-    // 3.0.0 is closest to 3.0.6 which is Flutter 3.10.6
-    expect(parser.getMinSdkVersionFromPubspec(), '3.10.6');
+    // ^3.0.0 is max minor version = 3.4.1 which is Flutter 3.22.1
+    expect(parser.getMaxFlutterSdkVersionFromPubspec(), '3.22.1');
   });
 
   test('get exact flutter version for flutter based pubspec', () {
@@ -122,8 +149,27 @@ environment:
       puroLsVersionsProvider: () => _puroLsVersions,
     );
 
-    // Flutter 3.16.9 is the closest to the constraint
-    expect(parser.getMinSdkVersionFromPubspec(), '3.16.9');
+    // ^3.16.9 is max minor version which is Flutter 3.22.1
+    expect(parser.getMaxFlutterSdkVersionFromPubspec(), '3.22.1');
+  });
+
+  test('get max flutter version for flutter based pubspec', () {
+    const pubspecYamlFlutterConstraint = '''
+name: puro_sidekick_plugin
+
+environment:
+  flutter: '>=3.0.0 <4.0.0'
+  sdk: '>=3.0.0 <4.0.0'
+''';
+
+    final tempDir = _createPubspec(pubspecYamlFlutterConstraint);
+    final parser = VersionParser(
+      packagePath: tempDir,
+      puroLsVersionsProvider: () => _puroLsVersions,
+    );
+
+    // Flutter 3.22.1 is the latest version < 4.0.0
+    expect(parser.getMaxFlutterSdkVersionFromPubspec(), '3.22.1');
   });
 }
 

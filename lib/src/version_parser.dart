@@ -1,6 +1,8 @@
+import 'dart:collection';
+
+import 'package:pub_semver/pub_semver.dart';
 import 'package:puro_sidekick_plugin/puro_sidekick_plugin.dart';
-import 'package:puro_sidekick_plugin/src/semantic_version.dart';
-import 'package:sidekick_core/sidekick_core.dart';
+import 'package:sidekick_core/sidekick_core.dart' hide Version;
 import 'package:yaml/yaml.dart';
 
 /// `VersionParser` is a class that helps in parsing Flutter and Dart versions.
@@ -19,11 +21,11 @@ class VersionParser {
   bool useBeta;
   String Function()? puroLsVersionsProvider;
 
-  /// Reads the minimum flutter version from pubspec.yaml if available
+  /// Reads the maximum flutter version from pubspec.yaml if available
   /// If the flutter version is not available, it reads the dart sdk version
-  /// and returns the flutter version of the lower bound of the dart version constraint
+  /// and returns the flutter version of the upper bound dart version constraint
   /// Returns null if the version is not found
-  String? getMinSdkVersionFromPubspec() {
+  String? getMaxFlutterSdkVersionFromPubspec() {
     try {
       final package = DartPackage.fromDirectory(packagePath);
       final pubspecFile = package?.pubspec;
@@ -45,84 +47,79 @@ class VersionParser {
 
       // Get flutter version if available
       final flutterConstraint = environment?['flutter'] as String?;
-      if (flutterConstraint != null) {
-        try {
-          // Get version by Caret syntax
-          final lowerFlutterBound = flutterConstraint.split('^')[1];
-          return lowerFlutterBound;
-        } catch (_) {}
-      }
 
       // Get dart sdk version if flutter version is not available
       final dartConstraint = environment?['sdk'] as String?;
-      String? lowerDartBound;
-      try {
-        lowerDartBound = dartConstraint?.split('>=')[1].split('<')[0];
-      } catch (_) {}
 
-      try {
-        // Get version by Caret syntax
-        lowerDartBound ??= dartConstraint?.split('^')[1];
-      } catch (_) {}
+      final availableVersions = _parseAvailableVersions();
 
-      if (lowerDartBound == null) {
+      if (flutterConstraint != null) {
+        final flutterVersion = VersionConstraint.parse(flutterConstraint);
+        for (final version in availableVersions.values) {
+          if (flutterVersion.allows(version)) {
+            return version.toString();
+          }
+        }
+      } else if (dartConstraint != null) {
+        final dartVersion = VersionConstraint.parse(dartConstraint);
+        for (final version in availableVersions.keys) {
+          if (dartVersion.allows(version)) {
+            return availableVersions[version].toString();
+          }
+        }
+      } else {
+        print('No flutter or dart version constraint found in pubspec.yaml');
         return null;
       }
 
-      return _getBestFlutterVersion(lowerDartBound);
+      return null;
     } on FileSystemException catch (e) {
       print('Error reading pubspec.yaml: $e');
-      return '';
+      return null;
     } on YamlException catch (e) {
       print('Error parsing pubspec.yaml: $e');
-      return '';
+      return null;
     } catch (e) {
       print('Unexpected error: $e');
-      return '';
+      return null;
     }
   }
 
-  String _getBestFlutterVersion(String dartVersion) {
-    if (puroLsVersionsProvider != null) {
-      final puroLsVersions = puroLsVersionsProvider!();
-      return _parseFlutterVersionToDartVersion(puroLsVersions, dartVersion);
-    }
-
+  /// Provides the available versions from puro ls-versions command
+  /// If the `puroLsVersionsProvider` is provided, it uses that to get the versions
+  /// Returns all stdout lines from the command as a list
+  List<String> _provideAvailableVersions() {
     final lines = <String>[];
 
-    try {
-      // List all available flutter and dart versions
-      puro(
-        ['ls-versions'],
-        progress: Progress((line) {
-          if (line.isNotEmpty) lines.add(line);
-        }),
-      );
-    } catch (e) {
-      print('Error getting flutter versions: $e');
+    if (puroLsVersionsProvider != null) {
+      lines.addAll(puroLsVersionsProvider!().split('\n'));
+    } else {
+      try {
+        // List all available flutter and dart versions
+        puro(
+          ['ls-versions', '--full'],
+          progress: Progress((line) {
+            if (line.isNotEmpty) lines.add(line);
+          }),
+        );
+      } catch (e) {
+        print('Error getting flutter versions: $e');
+      }
     }
-
-    final allVersions = lines.join('\n');
-    return _parseFlutterVersionToDartVersion(allVersions, dartVersion);
+    return lines;
   }
 
-  String testParseFlutterVersionToDartVersion(String dartVersion) {
-    if (puroLsVersionsProvider == null) {
-      throw Exception('puroLsVersionsProvider is not set');
-    }
-    return _parseFlutterVersionToDartVersion(puroLsVersionsProvider!(), dartVersion);
-  }
-
-  String _parseFlutterVersionToDartVersion(String versions, String dartVersion) {
-    final semanticDartVersion = SemanticVersion.fromString(dartVersion);
-
-    final lines = versions.split('\n');
-
+  /// Parses the available versions from the `puro ls-versions` command
+  /// Returns a map of dart version to flutter version
+  Map<Version, Version> _parseAvailableVersions() {
     // Map off dart version to flutter version
-    final versionMap = <SemanticVersion, SemanticVersion>{};
-    final betaVersionMap = <SemanticVersion, SemanticVersion>{};
+    final versionMap = <Version, Version>{};
+    final betaVersionMap = <Version, Version>{};
 
     bool isBetaRelease = false;
+
+    // puro stdout lines
+    final lines = _provideAvailableVersions();
 
     // Parse the version list
     for (final line in lines) {
@@ -132,8 +129,8 @@ class VersionParser {
 
       final parts = line.split('|');
       if (parts.length >= 3) {
-        final flutterVersion = SemanticVersion.fromString(parts[0].replaceAll('Flutter', '').trim());
-        final listedDartVersion = SemanticVersion.fromString(parts[3].replaceAll('Dart', '').trim());
+        final flutterVersion = Version.parse(parts[0].replaceAll('Flutter', '').trim());
+        final listedDartVersion = Version.parse(parts[3].replaceAll('Dart', '').trim());
 
         // Only add the latest version for each dart version
         if (isBetaRelease) {
@@ -148,12 +145,42 @@ class VersionParser {
       }
     }
 
+    final SplayTreeMap<Version, Version> sortedVersions;
     if (useBeta) {
-      final bestDartVersion = getBestMatchingVersion(betaVersionMap.keys.toList(), semanticDartVersion);
-      return betaVersionMap[bestDartVersion].toString();
+      sortedVersions = SplayTreeMap<Version, Version>.from(
+          betaVersionMap, (key1, key2) => betaVersionMap[key2]!.compareTo(betaVersionMap[key1]!));
     } else {
-      final bestDartVersion = getBestMatchingVersion(versionMap.keys.toList(), semanticDartVersion);
-      return versionMap[bestDartVersion].toString();
+      sortedVersions = SplayTreeMap<Version, Version>.from(
+          versionMap, (key1, key2) => versionMap[key2]!.compareTo(versionMap[key1]!));
     }
+
+    return sortedVersions;
+  }
+
+  String? _getBestFlutterVersion(Map<Version, Version> versions, String? dartConstraint, String? flutterConstraint) {
+    final availableVersions = _parseAvailableVersions();
+
+    if (flutterConstraint != null) {
+      final flutterVersion = VersionConstraint.parse(flutterConstraint);
+      for (final version in availableVersions.values) {
+        if (flutterVersion.allows(version)) {
+          return version.toString();
+        }
+      }
+    } else if (dartConstraint != null) {
+      final dartVersion = VersionConstraint.parse(dartConstraint);
+      for (final version in versions.keys) {
+        if (dartVersion.allows(version)) {
+          return versions[version].toString();
+        }
+      }
+    }
+    return null;
+  }
+
+  /// Test method to get the best flutter version for the given dart and flutter constraints
+  String? testGetBestFlutterVersion({String? dartConstraint, String? flutterConstraint}) {
+    final availableVersions = _parseAvailableVersions();
+    return _getBestFlutterVersion(availableVersions, dartConstraint, flutterConstraint);
   }
 }
