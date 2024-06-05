@@ -30,6 +30,7 @@ class VersionParser {
       final package = DartPackage.fromDirectory(packagePath);
       final pubspecFile = package?.pubspec;
       if (pubspecFile == null || !pubspecFile.existsSync()) {
+        print('pubspec.yaml not found in the package directory');
         return null;
       }
       final pubspecYamlContent = pubspecFile.readAsStringSync();
@@ -99,7 +100,7 @@ class VersionParser {
         puro(
           ['ls-versions', '--full'],
           progress: Progress((line) {
-            if (line.isNotEmpty) lines.add(line);
+            if (line.trim().isNotEmpty) lines.add(line);
           }),
         );
       } catch (e) {
@@ -129,19 +130,21 @@ class VersionParser {
 
       final parts = line.split('|');
       if (parts.length >= 3) {
-        final flutterVersion = Version.parse(parts[0].replaceAll('Flutter', '').trim());
-        final listedDartVersion = Version.parse(parts[3].replaceAll('Dart', '').trim());
+        try {
+          final flutterVersion = Version.parse(parts[0].replaceAll('Flutter', '').trim());
+          final listedDartVersion = Version.parse(parts[3].replaceAll('Dart', '').trim());
 
-        // Only add the latest version for each dart version
-        if (isBetaRelease) {
-          if (!betaVersionMap.containsKey(listedDartVersion)) {
-            betaVersionMap[listedDartVersion] = flutterVersion;
+          // Only add the latest version for each dart version
+          if (isBetaRelease) {
+            if (!betaVersionMap.containsKey(listedDartVersion)) {
+              betaVersionMap[listedDartVersion] = flutterVersion;
+            }
+          } else {
+            if (!versionMap.containsKey(listedDartVersion)) {
+              versionMap[listedDartVersion] = flutterVersion;
+            }
           }
-        } else {
-          if (!versionMap.containsKey(listedDartVersion)) {
-            versionMap[listedDartVersion] = flutterVersion;
-          }
-        }
+        } catch (_) {}
       }
     }
 

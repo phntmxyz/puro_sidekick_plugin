@@ -22,7 +22,7 @@ int puro(
 
   final process = dcli.startFromArgs(
     puroPath,
-    args,
+    ['--no-update-check', '--no-install', ...args],
     workingDirectory: workingDir.path,
     nothrow: true,
     progress: progress,
