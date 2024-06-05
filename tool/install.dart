@@ -24,9 +24,9 @@ Future<void> main() async {
   }
 
   final ModifiableSourceFile mainSourceFile = ModifiableSourceFile(mainFile);
-  mainSourceFile.addFlutterSdkPath('puroFlutterSdkPath()');
+  mainSourceFile.addFlutterSdkPath('flutterSdkSymlink()');
   mainSourceFile.addImport(
-    "import 'package:sidekick_puro_plugin/sidekick_puro_plugin.dart';",
+    "import 'package:puro_sidekick_plugin/puro_sidekick_plugin.dart';",
   );
   mainSourceFile.registerSdkInitializer(
     'addFlutterSdkInitializer(initializePuro);',

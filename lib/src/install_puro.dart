@@ -1,52 +1,124 @@
+import 'dart:convert';
+
 import 'package:dcli/dcli.dart' as dcli;
 import 'package:puro_sidekick_plugin/puro_sidekick_plugin.dart';
 import 'package:sidekick_core/sidekick_core.dart';
+
+const puroFallbackVersion = '1.4.6';
 
 /// Executes Flutter CLI via puro
 ///
 /// https://github.com/phntmxyz/puro_sidekick_plugin
 int installPuro({
-  Directory? workingDirectory,
+  Directory? installDirectory,
   dcli.Progress? progress,
 }) {
-  if (dcli.which('puro').found) {
-    print('Puro is already installed.');
+  final puroPath = getPuroPath(installDirectory);
+
+  print('puro path: $puroPath');
+
+  if (puroPath != null) {
+    print('Puro is already installed at $puroPath');
     return 0;
   }
 
-  final workingDir = workingDirectory?.absolute ?? entryWorkingDirectory.absolute;
+  final latestVersion = getLatestPuroVersion();
+  print('Download Puro $latestVersion');
 
+  final puroWindowsDownloadUrl = "https://puro.dev/builds/$latestVersion/windows-x64/puro.exe";
+  final puroDarwinDownloadUrl = "https://puro.dev/builds/$latestVersion/darwin-x64/puro";
+  final puroLinuxDownloadUrl = "https://puro.dev/builds/$latestVersion/linux-x64/puro";
+
+  int resultCode = -1;
+  final downloadPath = getPuroBinPath(installDirectory);
   if (Platform.isWindows) {
-    const command =
-        'Invoke-WebRequest -Uri "https://puro.dev/builds/1.4.6/windows-x64/puro.exe" -OutFile "\$env:temp\\puro.exe"; &"\$env:temp\\puro.exe" install-puro --promote';
-
-    final process = dcli.startFromArgs(
-      'powershell.exe',
-      ['-Command', command],
-      workingDirectory: workingDir.path,
-      nothrow: true,
-      progress: progress,
-      terminal: progress == null,
-    );
-    puro(['upgrade-puro']);
-    puro(['version']);
-
-    return process.exitCode ?? -1;
+    resultCode = installPuroWindows(puroWindowsDownloadUrl, downloadPath, progress);
+  } else if (Platform.isMacOS) {
+    resultCode = installPuroMacOs(puroDarwinDownloadUrl, downloadPath, progress);
+  } else if (Platform.isLinux) {
+    resultCode = installPuroLinux(puroLinuxDownloadUrl, downloadPath, progress);
   } else {
-    final process = dcli.startFromArgs(
-      'bash',
-      [
-        '-c',
-        'curl -o- https://puro.dev/install.sh | PURO_VERSION="1.4.6" bash',
-      ],
-      workingDirectory: workingDir.path,
-      nothrow: true,
-      progress: progress,
-      terminal: progress == null,
-    );
-    puro(['upgrade-puro']);
-    puro(['version']);
-
-    return process.exitCode ?? -1;
+    print('Unsupported platform.');
   }
+  return resultCode;
+}
+
+String? getLatestPuroVersion() {
+  try {
+    const command = 'curl https://api.github.com/repos/pingbird/puro/releases?per_page=1&page=1';
+    final output = dcli.start(command, progress: Progress.capture(captureStderr: false));
+    if (output.exitCode != 0) {
+      print('Failed to get the latest Puro version.');
+      return puroFallbackVersion;
+    }
+    final resultJson = output.lines.join('\n');
+    final result = jsonDecode(resultJson);
+    return ((result as List<dynamic>)[0] as Map<String, dynamic>)['tag_name'] as String;
+  } catch (e) {
+    print('Failed to get the latest Puro version: $e');
+    return puroFallbackVersion;
+  }
+}
+
+int installPuroMacOs(String downloadUrl, String downloadPath, dcli.Progress? progress) {
+  final downloadProcess = dcli.startFromArgs(
+    'bash',
+    [
+      '-c',
+      'curl -O $downloadUrl',
+    ],
+    workingDirectory: downloadPath,
+    nothrow: true,
+    progress: progress,
+    terminal: progress == null,
+  );
+
+  if (downloadProcess.exitCode != 0) {
+    return downloadProcess.exitCode ?? -1;
+  }
+
+  final chmodProcess = dcli.startFromArgs(
+    'bash',
+    [
+      '-c',
+      'chmod +x puro',
+    ],
+    workingDirectory: downloadPath,
+    nothrow: true,
+    progress: progress,
+    terminal: progress == null,
+  );
+
+  return chmodProcess.exitCode ?? -1;
+}
+
+int installPuroLinux(String downloadUrl, String downloadPath, dcli.Progress? progress) {
+  final downloadProcess = dcli.startFromArgs(
+    'bash',
+    [
+      '-c',
+      'curl -O $downloadUrl',
+    ],
+    workingDirectory: downloadPath,
+    nothrow: true,
+    progress: progress,
+    terminal: progress == null,
+  );
+
+  return downloadProcess.exitCode ?? -1;
+}
+
+int installPuroWindows(String downloadUrl, String downloadPath, dcli.Progress? progress) {
+  final command = 'Invoke-WebRequest -Uri "$downloadUrl" -OutFile "\$env:temp\\puro.exe"; &"\$env:temp\\puro.exe"';
+
+  final process = dcli.startFromArgs(
+    'powershell.exe',
+    ['-Command', command],
+    workingDirectory: downloadPath,
+    nothrow: true,
+    progress: progress,
+    terminal: progress == null,
+  );
+
+  return process.exitCode ?? -1;
 }

@@ -13,7 +13,7 @@ If you want to be explicit, use `puro()`.
 ## Installation
 
 ```bash
-<cli> sidekick plugins install puro_sidekick_plugin
+<cli> sidekick plugins install --source git https://github.com/phntmxyz/puro_sidekick_plugin
 ```
 
 ## License

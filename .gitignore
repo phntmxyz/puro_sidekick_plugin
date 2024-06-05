@@ -26,6 +26,7 @@ doc/api/
 .flutter-plugins
 .flutter-plugins-dependencies
 
+bin/puro
 .puro.json
 .idea/
 .vscode/

@@ -7,23 +7,59 @@ import 'package:sidekick_core/sidekick_core.dart';
 int puro(
   List<String> args, {
   Directory? workingDirectory,
+  Directory? installDirectory,
   dcli.Progress? progress,
+  String Function()? throwOnError,
 }) {
-  if (which('puro').notfound) {
+  final workingDir = entryWorkingDirectory.absolute;
+  final installDir = installDirectory ?? SidekickContext.sidekickPackage.buildDir;
+
+  final puroPath = getPuroPath(installDir);
+
+  if (puroPath == null) {
     throw PuroNotFoundException();
   }
 
-  final workingDir = workingDirectory?.absolute ?? entryWorkingDirectory.absolute;
-
   final process = dcli.startFromArgs(
-    'puro',
-    args,
+    puroPath,
+    ['--no-update-check', '--no-install', ...args],
     workingDirectory: workingDir.path,
     nothrow: true,
     progress: progress,
     terminal: progress == null,
   );
-  return process.exitCode ?? -1;
+
+  final exitCode = process.exitCode ?? -1;
+
+  if (exitCode != 0 && throwOnError != null) {
+    throw throwOnError();
+  }
+
+  return exitCode;
+}
+
+String? getPuroPath(Directory? installDirectory) {
+  String? path;
+  final result = dcli.find('puro', workingDirectory: getPuroBinPath(installDirectory), recursive: false);
+  path = result.firstLine;
+  if (path == null) {
+    // Try to find puro in PATH
+    final which = dcli.which('puro');
+    if (which.found) {
+      path = which.path;
+    }
+  }
+  return path;
+}
+
+String getPuroBinPath(Directory? installDirectory) {
+  final installDir = installDirectory ?? SidekickContext.sidekickPackage.buildDir;
+
+  final puroPath = '${installDir.path}/bin/';
+  if (!dcli.exists(puroPath)) {
+    dcli.createDir(puroPath);
+  }
+  return puroPath;
 }
 
 /// Thrown when puro is not found
