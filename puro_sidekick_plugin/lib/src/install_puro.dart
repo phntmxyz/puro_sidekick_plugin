@@ -105,7 +105,23 @@ int installPuroLinux(String downloadUrl, String downloadPath, dcli.Progress? pro
     terminal: progress == null,
   );
 
-  return downloadProcess.exitCode ?? -1;
+  if (downloadProcess.exitCode != 0) {
+    return downloadProcess.exitCode ?? -1;
+  }
+
+  final chmodProcess = dcli.startFromArgs(
+    'bash',
+    [
+      '-c',
+      'chmod +x puro',
+    ],
+    workingDirectory: downloadPath,
+    nothrow: true,
+    progress: progress,
+    terminal: progress == null,
+  );
+
+  return chmodProcess.exitCode ?? -1;
 }
 
 int installPuroWindows(String downloadUrl, String downloadPath, dcli.Progress? progress) {
