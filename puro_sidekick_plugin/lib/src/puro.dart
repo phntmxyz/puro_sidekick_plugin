@@ -15,8 +15,6 @@ int puro(
   final workingDir = entryWorkingDirectory.absolute;
   final installDir = installDirectory ?? SidekickContext.sidekickPackage.buildDir;
 
-  initializePuro(workingDir);
-
   final puroPath = getPuroPath(installDir);
 
   if (puroPath == null) {
