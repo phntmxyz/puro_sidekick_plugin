@@ -9,17 +9,16 @@ const puroFallbackVersion = '1.4.6';
 /// Executes Flutter CLI via puro
 ///
 /// https://github.com/phntmxyz/puro_sidekick_plugin
-int installPuro({
-  Directory? installDirectory,
+Directory installPuro({
   dcli.Progress? progress,
 }) {
-  final puroPath = getPuroPath(installDirectory);
+  final puroPath = getPuroPath();
 
   print('puro path: $puroPath');
 
   if (puroPath != null) {
     print('Puro is already installed at $puroPath');
-    return 0;
+    return puroPath.parent.parent;
   }
 
   final latestVersion = getLatestPuroVersion();
@@ -30,7 +29,7 @@ int installPuro({
   final puroLinuxDownloadUrl = "https://puro.dev/builds/$latestVersion/linux-x64/puro";
 
   int resultCode = -1;
-  final downloadPath = getPuroBinPath(installDirectory);
+  final downloadPath = getPuroBinPath();
   if (Platform.isWindows) {
     resultCode = installPuroWindows(puroWindowsDownloadUrl, downloadPath, progress);
   } else if (Platform.isMacOS) {
@@ -40,7 +39,10 @@ int installPuro({
   } else {
     print('Unsupported platform.');
   }
-  return resultCode;
+  if (resultCode != 0) {
+    throw PuroInstallationFailedException();
+  }
+  return downloadPath.parent;
 }
 
 String? getLatestPuroVersion() {
@@ -60,14 +62,14 @@ String? getLatestPuroVersion() {
   }
 }
 
-int installPuroMacOs(String downloadUrl, String downloadPath, dcli.Progress? progress) {
+int installPuroMacOs(String downloadUrl, Directory downloadPath, dcli.Progress? progress) {
   final downloadProcess = dcli.startFromArgs(
     'bash',
     [
       '-c',
       'curl -O $downloadUrl',
     ],
-    workingDirectory: downloadPath,
+    workingDirectory: downloadPath.path,
     nothrow: true,
     progress: progress,
     terminal: progress == null,
@@ -83,7 +85,7 @@ int installPuroMacOs(String downloadUrl, String downloadPath, dcli.Progress? pro
       '-c',
       'chmod +x puro',
     ],
-    workingDirectory: downloadPath,
+    workingDirectory: downloadPath.path,
     nothrow: true,
     progress: progress,
     terminal: progress == null,
@@ -94,14 +96,14 @@ int installPuroMacOs(String downloadUrl, String downloadPath, dcli.Progress? pro
   return chmodProcess.exitCode ?? -1;
 }
 
-int installPuroLinux(String downloadUrl, String downloadPath, dcli.Progress? progress) {
+int installPuroLinux(String downloadUrl, Directory downloadPath, dcli.Progress? progress) {
   final downloadProcess = dcli.startFromArgs(
     'bash',
     [
       '-c',
       'curl -O $downloadUrl',
     ],
-    workingDirectory: downloadPath,
+    workingDirectory: downloadPath.path,
     nothrow: true,
     progress: progress,
     terminal: progress == null,
@@ -117,7 +119,7 @@ int installPuroLinux(String downloadUrl, String downloadPath, dcli.Progress? pro
       '-c',
       'chmod +x puro',
     ],
-    workingDirectory: downloadPath,
+    workingDirectory: downloadPath.path,
     nothrow: true,
     progress: progress,
     terminal: progress == null,
@@ -128,13 +130,13 @@ int installPuroLinux(String downloadUrl, String downloadPath, dcli.Progress? pro
   return chmodProcess.exitCode ?? -1;
 }
 
-int installPuroWindows(String downloadUrl, String downloadPath, dcli.Progress? progress) {
+int installPuroWindows(String downloadUrl, Directory downloadPath, dcli.Progress? progress) {
   final command = 'Invoke-WebRequest -Uri "$downloadUrl" -OutFile "\$env:temp\\puro.exe"; &"\$env:temp\\puro.exe"';
 
   final process = dcli.startFromArgs(
     'powershell.exe',
     ['-Command', command],
-    workingDirectory: downloadPath,
+    workingDirectory: downloadPath.path,
     nothrow: true,
     progress: progress,
     terminal: progress == null,

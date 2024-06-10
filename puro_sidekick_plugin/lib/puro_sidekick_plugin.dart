@@ -1,6 +1,7 @@
 /// A Sidekick plugin that connects puro to the sidekick flutter command
 library puro_sidekick_plugin;
 
+import 'package:dcli/dcli.dart' as dcli;
 import 'package:puro_sidekick_plugin/puro_sidekick_plugin.dart';
 import 'package:puro_sidekick_plugin/src/flutter_sdk.dart';
 import 'package:puro_sidekick_plugin/src/install_puro.dart';
@@ -15,10 +16,8 @@ void initializePuro(Directory sdk) {
   // Create folder for flutter sdk symlink
   final symlinkPath = flutterSdkSymlink();
 
-  final resultCode = installPuro();
-  if (resultCode != 0) {
-    throw PuroInstallationFailedException();
-  }
+  final puroRootDir = installPuro();
+  dcli.env['PURO_ROOT'] = puroRootDir.absolute.path;
 
   // Setup puro environment
   setupFlutterEnvironment();
