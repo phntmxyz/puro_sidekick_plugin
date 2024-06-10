@@ -1,4 +1,5 @@
 import 'package:dcli/dcli.dart' as dcli;
+import 'package:puro_sidekick_plugin/puro_sidekick_plugin.dart';
 import 'package:sidekick_core/sidekick_core.dart';
 
 /// Executes Flutter CLI via puro
@@ -13,6 +14,8 @@ int puro(
 }) {
   final workingDir = entryWorkingDirectory.absolute;
   final installDir = installDirectory ?? SidekickContext.sidekickPackage.buildDir;
+
+  initializePuro(workingDir);
 
   final puroPath = getPuroPath(installDir);
 
