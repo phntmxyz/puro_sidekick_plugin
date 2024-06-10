@@ -20,11 +20,6 @@ int puro(
     throw PuroNotFoundException();
   }
 
-  print('Running puro from $puroPath');
-  print('Working directory: ${workingDir.path}');
-  print('Install directory: ${installDir.path}');
-  print('Args: $args');
-
   final process = dcli.startFromArgs(
     puroPath,
     ['--no-update-check', '--no-install', ...args],
