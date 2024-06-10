@@ -89,7 +89,7 @@ int installPuroMacOs(String downloadUrl, String downloadPath, dcli.Progress? pro
     terminal: progress == null,
   );
 
-  dcli.env['PURO_ROOT'] = "$downloadPath";
+  dcli.env['PURO_ROOT'] = "$downloadPath../";
 
   return chmodProcess.exitCode ?? -1;
 }
@@ -123,7 +123,7 @@ int installPuroLinux(String downloadUrl, String downloadPath, dcli.Progress? pro
     terminal: progress == null,
   );
 
-  dcli.env['PURO_ROOT'] = "$downloadPath";
+  dcli.env['PURO_ROOT'] = "$downloadPath../";
 
   return chmodProcess.exitCode ?? -1;
 }
