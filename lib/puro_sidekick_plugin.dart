@@ -43,7 +43,7 @@ void setupFlutterEnvironment() {
     puro(['create', sdkVersion, sdkVersion], progress: Progress.print());
   }
   print('Use Puro environment: $sdkVersion');
-  puro(['use', sdkVersion], progress: Progress.print());
+  puro(['use', '--project', entryWorkingDirectory.path, sdkVersion], progress: Progress.print());
 }
 
 /// Thrown when puro could not be installed
