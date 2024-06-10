@@ -19,7 +19,7 @@ dev_dependencies:
 
 dependency_overrides:
   puro_sidekick_plugin:
-    path: ../../puro_sidekick_plugin
+    path: ../../
 
 # generated code, do not edit this manually
 sidekick:

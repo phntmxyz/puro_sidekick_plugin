@@ -38,14 +38,14 @@ int puro(
 
 File? getPuroPath() {
   String? path;
-  final result = dcli.find('puro', workingDirectory: getPuroBinPath().path, recursive: false);
-  path = result.firstLine;
+  // Try to find puro in PATH
+  final which = dcli.which('puro');
+  if (which.found) {
+    path = which.path;
+  }
   if (path == null) {
-    // Try to find puro in PATH
-    final which = dcli.which('puro');
-    if (which.found) {
-      path = which.path;
-    }
+    final result = dcli.find('puro', workingDirectory: getPuroBinPath().path, recursive: false);
+    path = result.firstLine;
   }
   return path != null ? File(path) : null;
 }

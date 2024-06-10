@@ -2,6 +2,7 @@
 <project version="4">
   <component name="VcsDirectoryMappings">
     <mapping directory="" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/sidekick_test/skt_sidekick/build/flutter" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/ci_test/skt_sidekick/build/envs/3.19.2/flutter" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/ci_test/skt_sidekick/build/shared/flutter" vcs="Git" />
   </component>
 </project>

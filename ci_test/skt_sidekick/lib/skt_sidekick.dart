@@ -10,8 +10,6 @@ Future<void> runSkt(List<String> args) async {
     flutterSdkPath: flutterSdkSymlink(),
   );
   addFlutterSdkInitializer(initializePuro);
-  print(Directory.current);
-  print(entryWorkingDirectory.absolute);
 
   runner
     ..addCommand(FlutterCommand())

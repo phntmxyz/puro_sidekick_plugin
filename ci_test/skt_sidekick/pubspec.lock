@@ -452,7 +452,7 @@ packages:
   puro_sidekick_plugin:
     dependency: "direct main"
     description:
-      path: "../../puro_sidekick_plugin"
+      path: "../.."
       relative: true
     source: path
     version: "0.1.0"

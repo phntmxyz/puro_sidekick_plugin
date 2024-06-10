@@ -10,4 +10,4 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Install dependencies using the Puro Sidekick Plugin
-        run: cd sidekick_test && ./skt flutter pub get
+        run: cd ci_test && ./skt flutter pub get
