@@ -14,8 +14,8 @@ Directory installPuro({
 }) {
   final puroPath = getPuroPath();
 
-  if (puroPath != null) {
-    print('Puro is already installed at $puroPath');
+  if (puroPath != null && puroPath.existsSync()) {
+    print('Puro is already installed at ${puroPath.parent.parent.absolute.path}');
     return puroPath.parent.parent;
   }
 
