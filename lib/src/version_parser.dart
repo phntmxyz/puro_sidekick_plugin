@@ -136,13 +136,9 @@ class VersionParser {
 
           // Only add the latest version for each dart version
           if (isBetaRelease) {
-            if (!betaVersionMap.containsKey(listedDartVersion)) {
-              betaVersionMap[listedDartVersion] = flutterVersion;
-            }
+            betaVersionMap[listedDartVersion] = flutterVersion;
           } else {
-            if (!versionMap.containsKey(listedDartVersion)) {
-              versionMap[listedDartVersion] = flutterVersion;
-            }
+            versionMap[listedDartVersion] = flutterVersion;
           }
         } catch (_) {}
       }
@@ -151,10 +147,10 @@ class VersionParser {
     final SplayTreeMap<Version, Version> sortedVersions;
     if (useBeta) {
       sortedVersions = SplayTreeMap<Version, Version>.from(
-          betaVersionMap, (key1, key2) => betaVersionMap[key2]!.compareTo(betaVersionMap[key1]!));
+          betaVersionMap, (key1, key2) => betaVersionMap[key1]!.compareTo(betaVersionMap[key2]!));
     } else {
       sortedVersions = SplayTreeMap<Version, Version>.from(
-          versionMap, (key1, key2) => versionMap[key2]!.compareTo(versionMap[key1]!));
+          versionMap, (key1, key2) => versionMap[key1]!.compareTo(versionMap[key2]!));
     }
 
     return sortedVersions;
