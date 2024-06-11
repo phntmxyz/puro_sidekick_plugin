@@ -51,11 +51,11 @@ File? getPuroPath() {
 }
 
 Directory getPuroBinPath() {
-  final installDir = SidekickContext.sidekickPackage.buildDir;
+  final installDir = Directory("${SidekickContext.sidekickPackage.buildDir.absolute.path}/puro");
 
   final puroPath = '${installDir.path}/bin/';
   if (!dcli.exists(puroPath)) {
-    dcli.createDir(puroPath);
+    dcli.createDir(puroPath, recursive: true);
   }
   return Directory(puroPath);
 }
