@@ -27,20 +27,26 @@ class VersionParser {
   /// Returns null if the version is not found
   String? getMaxFlutterSdkVersionFromPubspec() {
     try {
-      final package = DartPackage.fromDirectory(packagePath);
-      final pubspecFile = package?.pubspec;
-      if (pubspecFile == null || !pubspecFile.existsSync()) {
-        print('pubspec.yaml not found in the package directory');
+      YamlMap? pubspec = _readPubspecFile(packagePath);
+      if (pubspec == null) {
         return null;
       }
-      final pubspecYamlContent = pubspecFile.readAsStringSync();
 
-      // Check for valid package name
-      final doc = loadYamlDocument(pubspecYamlContent);
-      final pubspec = doc.contents.value as YamlMap;
-      final packageName = pubspec['name'] as String?;
-      if (packageName == null) {
-        return null;
+      // Check if the package is part of a workspace
+      final isInWorkspace = (pubspec['resolution'] as String?) == 'workspace';
+      if (isInWorkspace) {
+        print('Package is part of a workspace. Use the root package pubspec.yaml to get the flutter version.');
+        late final Directory projectRoot;
+        try {
+          // This will crash in tests
+          projectRoot = SidekickContext.projectRoot;
+        } catch (e) {
+          projectRoot = packagePath.parent;
+        }
+        final newPubspec = _readPubspecFile(projectRoot);
+        if (newPubspec != null) {
+          pubspec = newPubspec;
+        }
       }
 
       // Check for environment
@@ -108,6 +114,27 @@ class VersionParser {
       }
     }
     return lines;
+  }
+
+  YamlMap? _readPubspecFile(Directory packagePath) {
+    try {
+      final package = DartPackage.fromDirectory(packagePath);
+      final pubspecFile = package?.pubspec;
+      if (pubspecFile == null || !pubspecFile.existsSync()) {
+        print('pubspec.yaml not found in the package directory');
+        return null;
+      }
+      final pubspecYamlContent = pubspecFile.readAsStringSync();
+
+      // Check for valid package name
+      final doc = loadYamlDocument(pubspecYamlContent);
+      final pubspec = doc.contents.value as YamlMap;
+      final packageName = pubspec['name'] as String?;
+      if (packageName != null) {
+        return pubspec;
+      }
+    } catch (_) {}
+    return null;
   }
 
   /// Parses the available versions from the `puro ls-versions` command
