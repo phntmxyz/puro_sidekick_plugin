@@ -44,13 +44,13 @@ File? getPuroPath() {
     path = which.path;
   }
   if (path == null) {
-    final result = dcli.find('puro', workingDirectory: getPuroBinPath().path, recursive: false);
+    final result = dcli.find('puro', workingDirectory: getPuroStandaloneBinPath().path, recursive: false);
     path = result.firstLine;
   }
   return path != null ? File(path) : null;
 }
 
-Directory getPuroBinPath() {
+Directory getPuroStandaloneBinPath() {
   final installDir = Directory("${SidekickContext.sidekickPackage.buildDir.absolute.path}/puro");
 
   final puroPath = '${installDir.path}/bin/';
