@@ -27,20 +27,26 @@ class VersionParser {
   /// Returns null if the version is not found
   String? getMaxFlutterSdkVersionFromPubspec() {
     try {
-      final package = DartPackage.fromDirectory(packagePath);
-      final pubspecFile = package?.pubspec;
-      if (pubspecFile == null || !pubspecFile.existsSync()) {
-        print('pubspec.yaml not found in the package directory');
+      YamlMap? pubspec = _readPubspecFile(packagePath);
+      if (pubspec == null) {
         return null;
       }
-      final pubspecYamlContent = pubspecFile.readAsStringSync();
 
-      // Check for valid package name
-      final doc = loadYamlDocument(pubspecYamlContent);
-      final pubspec = doc.contents.value as YamlMap;
-      final packageName = pubspec['name'] as String?;
-      if (packageName == null) {
-        return null;
+      // Check if the package is part of a workspace
+      final isInWorkspace = (pubspec['resolution'] as String?) == 'workspace';
+      if (isInWorkspace) {
+        print('Package is part of a workspace. Use the root package pubspec.yaml to get the flutter version.');
+        late final Directory projectRoot;
+        try {
+          // This will crash in tests
+          projectRoot = SidekickContext.projectRoot;
+        } catch (e) {
+          projectRoot = packagePath.parent;
+        }
+        final newPubspec = _readPubspecFile(projectRoot);
+        if (newPubspec != null) {
+          pubspec = newPubspec;
+        }
       }
 
       // Check for environment
@@ -110,6 +116,27 @@ class VersionParser {
     return lines;
   }
 
+  YamlMap? _readPubspecFile(Directory packagePath) {
+    try {
+      final package = DartPackage.fromDirectory(packagePath);
+      final pubspecFile = package?.pubspec;
+      if (pubspecFile == null || !pubspecFile.existsSync()) {
+        print('pubspec.yaml not found in the package directory');
+        return null;
+      }
+      final pubspecYamlContent = pubspecFile.readAsStringSync();
+
+      // Check for valid package name
+      final doc = loadYamlDocument(pubspecYamlContent);
+      final pubspec = doc.contents.value as YamlMap;
+      final packageName = pubspec['name'] as String?;
+      if (packageName != null) {
+        return pubspec;
+      }
+    } catch (_) {}
+    return null;
+  }
+
   /// Parses the available versions from the `puro ls-versions` command
   /// Returns a map of dart version to flutter version
   Map<Version, Version> _parseAvailableVersions() {
@@ -136,13 +163,9 @@ class VersionParser {
 
           // Only add the latest version for each dart version
           if (isBetaRelease) {
-            if (!betaVersionMap.containsKey(listedDartVersion)) {
-              betaVersionMap[listedDartVersion] = flutterVersion;
-            }
+            betaVersionMap[listedDartVersion] = flutterVersion;
           } else {
-            if (!versionMap.containsKey(listedDartVersion)) {
-              versionMap[listedDartVersion] = flutterVersion;
-            }
+            versionMap[listedDartVersion] = flutterVersion;
           }
         } catch (_) {}
       }
@@ -151,10 +174,10 @@ class VersionParser {
     final SplayTreeMap<Version, Version> sortedVersions;
     if (useBeta) {
       sortedVersions = SplayTreeMap<Version, Version>.from(
-          betaVersionMap, (key1, key2) => betaVersionMap[key2]!.compareTo(betaVersionMap[key1]!));
+          betaVersionMap, (key1, key2) => betaVersionMap[key1]!.compareTo(betaVersionMap[key2]!));
     } else {
       sortedVersions = SplayTreeMap<Version, Version>.from(
-          versionMap, (key1, key2) => versionMap[key2]!.compareTo(versionMap[key1]!));
+          versionMap, (key1, key2) => versionMap[key1]!.compareTo(versionMap[key2]!));
     }
 
     return sortedVersions;

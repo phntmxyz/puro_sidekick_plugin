@@ -1,0 +1,26 @@
+name: skt_sidekick
+description: Sidekick CLI for skt
+version: 0.0.1
+publish_to: none
+
+environment:
+  sdk: ">=3.2.6 <4.0.0"
+
+executables:
+  main:
+
+dependencies:
+  puro_sidekick_plugin:
+    git: https://github.com/phntmxyz/puro_sidekick_plugin
+  sidekick_core: ^2.1.2
+
+dev_dependencies:
+  lint: ^2.0.0
+
+dependency_overrides:
+  puro_sidekick_plugin:
+    path: ../../
+
+# generated code, do not edit this manually
+sidekick:
+  cli_version: 2.1.2

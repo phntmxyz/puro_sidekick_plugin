@@ -1,6 +1,7 @@
 /// A Sidekick plugin that connects puro to the sidekick flutter command
 library puro_sidekick_plugin;
 
+import 'package:dcli/dcli.dart' as dcli;
 import 'package:puro_sidekick_plugin/puro_sidekick_plugin.dart';
 import 'package:puro_sidekick_plugin/src/flutter_sdk.dart';
 import 'package:puro_sidekick_plugin/src/install_puro.dart';
@@ -15,13 +16,11 @@ void initializePuro(Directory sdk) {
   // Create folder for flutter sdk symlink
   final symlinkPath = flutterSdkSymlink();
 
-  final resultCode = installPuro();
-  if (resultCode != 0) {
-    throw PuroInstallationFailedException();
-  }
+  final puroRootDir = installPuro();
+  dcli.env['PURO_ROOT'] = puroRootDir.absolute.path;
 
   // Setup puro environment
-  setupFlutterEnvironment();
+  _setupFlutterEnvironment();
 
   // Create symlink to puro flutter sdk
   final flutterPath = puroFlutterSdkPath();
@@ -29,8 +28,8 @@ void initializePuro(Directory sdk) {
   createSymlink(symlinkPath, flutterPath);
 }
 
-void setupFlutterEnvironment() {
-  final sdkVersion = VersionParser(packagePath: SidekickContext.projectRoot).getMaxFlutterSdkVersionFromPubspec();
+void _setupFlutterEnvironment() {
+  final sdkVersion = VersionParser(packagePath: entryWorkingDirectory).getMaxFlutterSdkVersionFromPubspec();
   if (sdkVersion == null) {
     throw Exception('No Flutter SDK version found in pubspec.yaml');
   }
@@ -44,7 +43,7 @@ void setupFlutterEnvironment() {
     puro(['create', sdkVersion, sdkVersion], progress: Progress.print());
   }
   print('Use Puro environment: $sdkVersion');
-  puro(['use', sdkVersion], progress: Progress.print());
+  puro(['use', '--project', entryWorkingDirectory.path, sdkVersion], progress: Progress.print());
 }
 
 /// Thrown when puro could not be installed

@@ -1,4 +1,4 @@
-import 'package:puro_sidekick_plugin/src/puro.dart';
+import 'package:puro_sidekick_plugin/puro_sidekick_plugin.dart';
 import 'package:sidekick_core/sidekick_core.dart';
 
 /// Makes the `puro` command available as subcommand
@@ -12,6 +12,9 @@ class PuroCommand extends ForwardCommand {
   @override
   Future<void> run() async {
     final args = argResults!.arguments;
+
+    initializePuro(Directory.current);
+
     exitCode = puro(args);
   }
 }
