@@ -1,20 +1,55 @@
-## Puro Sidekick Plugin
+# Puro Sidekick Plugin
 
-Plugin for [phntmxyz/sidekick](https://github.com/phntmxyz/sidekick)
+This is a plugin for [phntmxyz/sidekick](https://github.com/phntmxyz/sidekick) that integrates with [`puro`](https://github.com/pingbird/puro) to manage Flutter versions. It provides three commands through the Sidekick CLI:
 
-Pins a Flutter version with [`puro`](https://github.com/pingbird/puro) and exposes two commands via the Sidekick CLI:
-- `<cli> flutter` - runs the pinned Flutter version
-- `<cli> dart` - runs the pinned Dart version
-- `<cli> puro` - runs puro
+- `<cli> flutter` - Executes the Flutter version managed by Puro
+- `<cli> dart` - Executes the Dart version managed by Puro
+- `<cli> puro` - Executes Puro
 
-You can continue using the `flutter()` and `dart()` functions in your scripts, because `flutterSdkPath:` binds the current Puro env SDK. 
-If you want to be explicit, use `puro()`.
+The `flutterSdkPath:` binds the current Puro environment SDK, allowing the `flutter()` and `dart()` functions in your scripts to use the pinned versions. If you prefer, you can use `puro()` for explicitness.
 
 ## Installation
+
+Install the plugin with the following command:
 
 ```bash
 <cli> sidekick plugins install --source git https://github.com/phntmxyz/puro_sidekick_plugin
 ```
+
+## Usage
+
+When you execute `flutter`, `dart`, or `puro`, the plugin uses the `pubspec.yaml` file in the current directory to determine the Flutter and Dart versions for the Puro environment. It sets up the Puro environment and then runs the command. If you execute these commands in a package directory, it uses that package's `pubspec.yaml` to set up the Puro environment.
+
+The plugin interprets Flutter and Dart version constraints and defaults to the minimum version if a range is provided.
+
+```yaml
+name: package_name
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+```
+
+```bash
+<cli> flutter --version // Outputs Flutter version 3.10.6
+```
+
+You can also specify a particular Flutter version.
+
+```yaml
+name: package_name
+
+environment:
+  flutter: '^3.19.6'
+  sdk: '>=3.0.0 <4.0.0'
+```
+
+```bash
+<cli> flutter --version // Outputs Flutter version 3.19.6
+```
+
+### Workspace
+
+You can add `resolution: workspace` to your package-level `pubspec.yaml` to always use the Flutter and Dart versions from the root `pubspec.yaml`.
 
 ## License
 
