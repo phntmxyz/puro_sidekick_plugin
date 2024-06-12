@@ -13,13 +13,15 @@ import 'package:yaml/yaml.dart';
 class VersionParser {
   VersionParser({
     required this.packagePath,
+    this.projectRoot,
     this.useBeta = false,
     this.puroLsVersionsProvider,
   });
 
   final Directory packagePath;
-  bool useBeta;
-  String Function()? puroLsVersionsProvider;
+  final Directory? projectRoot;
+  final bool useBeta;
+  final String Function()? puroLsVersionsProvider;
 
   /// Reads the maximum flutter version from pubspec.yaml if available
   /// If the flutter version is not available, it reads the dart sdk version
@@ -34,16 +36,12 @@ class VersionParser {
 
       // Check if the package is part of a workspace
       final isInWorkspace = (pubspec['resolution'] as String?) == 'workspace';
-      if (isInWorkspace) {
+      if (isInWorkspace &&
+          projectRoot != null &&
+          projectRoot!.existsSync() &&
+          projectRoot!.absolute.path != packagePath.absolute.path) {
         print('Package is part of a workspace. Use the root package pubspec.yaml to get the flutter version.');
-        late final Directory projectRoot;
-        try {
-          // This will crash in tests
-          projectRoot = SidekickContext.projectRoot;
-        } catch (e) {
-          projectRoot = packagePath.parent;
-        }
-        final newPubspec = _readPubspecFile(projectRoot);
+        final newPubspec = _readPubspecFile(projectRoot!);
         if (newPubspec != null) {
           pubspec = newPubspec;
         }

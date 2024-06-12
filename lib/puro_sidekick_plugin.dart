@@ -29,7 +29,10 @@ void initializePuro(Directory sdk) {
 }
 
 void _setupFlutterEnvironment() {
-  final sdkVersion = VersionParser(packagePath: entryWorkingDirectory).getMaxFlutterSdkVersionFromPubspec();
+  final sdkVersion = VersionParser(
+    packagePath: entryWorkingDirectory,
+    projectRoot: SidekickContext.projectRoot,
+  ).getMaxFlutterSdkVersionFromPubspec();
   if (sdkVersion == null) {
     throw Exception('No Flutter SDK version found in pubspec.yaml');
   }

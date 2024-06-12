@@ -51,6 +51,7 @@ resolution: workspace
 
     final tempDir = _createWorkspacePubspec(rootPubspec, packagePubspec);
     final parser = VersionParser(
+      projectRoot: tempDir,
       packagePath: Directory('${tempDir.path}/package'),
       puroLsVersionsProvider: () => _puroLsVersions,
     );
