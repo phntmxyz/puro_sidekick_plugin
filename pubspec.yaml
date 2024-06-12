@@ -6,11 +6,8 @@ issue_tracker: https://github.com/phntmxyz/puro_sidekick_plugin/issues
 topics:
   - sidekick
   - sidekick-plugin
-  - flutter-wrapper
   - flutter-version-management
   - puro
-
-publish_to: none
 
 environment:
   sdk: '>=3.0.0 <4.0.0'

@@ -20,7 +20,7 @@ Directory installPuro({
   }
 
   final installGlobal =
-      dcli.ask("Puro is not installed.\nDo you want to install Puro globally? (y/n)", defaultValue: 'n');
+      dcli.ask("Puro is not installed.\nDo you want to install Puro global? (y/n)", defaultValue: 'n');
 
   final latestVersion = getLatestPuroVersion();
   print('Download Puro $latestVersion');

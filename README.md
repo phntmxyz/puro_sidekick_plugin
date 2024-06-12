@@ -13,7 +13,17 @@ The `flutterSdkPath:` binds the current Puro environment SDK, allowing the `flut
 Install the plugin with the following command:
 
 ```bash
-<cli> sidekick plugins install --source git https://github.com/phntmxyz/puro_sidekick_plugin
+<cli> sidekick plugins install puro_sidekick_plugin
+```
+
+After installation, the plugin is available in the Sidekick CLI.
+Afterward it will check if `puro` is installed already, if not it will aks you to install `puro` globally 
+or if you want to use it locally for the current project.
+
+```bash
+~/project master > <cli> flutter --version                                                                                                                   5s
+Puro is not installed.
+Do you want to install Puro global? (y/n) [n] 
 ```
 
 ## Usage
@@ -31,6 +41,7 @@ environment:
 
 ```bash
 <cli> flutter --version // Outputs Flutter version 3.10.6
+<cli> puro flutter --version // Also outputs Flutter version 3.10.6
 ```
 
 You can also specify a particular Flutter version.
