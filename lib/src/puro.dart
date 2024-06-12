@@ -44,20 +44,22 @@ File? getPuroPath() {
     path = which.path;
   }
   if (path == null) {
-    final result = dcli.find('puro', workingDirectory: getPuroStandaloneBinPath().path, recursive: false);
-    path = result.firstLine;
+    final standalonePath = getPuroStandaloneBinPath();
+    if (standalonePath.existsSync()) {
+      final result = dcli.find('puro', workingDirectory: standalonePath.path, recursive: false);
+      path = result.firstLine;
+    }
   }
   return path != null ? File(path) : null;
 }
 
-Directory getPuroStandaloneBinPath() {
-  final installDir = Directory("${SidekickContext.sidekickPackage.buildDir.absolute.path}/puro");
-
-  final puroPath = '${installDir.path}/bin/';
-  if (!dcli.exists(puroPath)) {
-    dcli.createDir(puroPath, recursive: true);
+/// Returns the puro standalone bin path. It may not exist.
+Directory getPuroStandaloneBinPath({bool createIfNotExists = false}) {
+  final path = Directory("${SidekickContext.sidekickPackage.buildDir.absolute.path}/puro/bin/");
+  if (createIfNotExists && !path.existsSync()) {
+    path.createSync(recursive: true);
   }
-  return Directory(puroPath);
+  return path;
 }
 
 /// Thrown when puro is not found

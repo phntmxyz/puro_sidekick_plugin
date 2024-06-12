@@ -66,7 +66,7 @@ Directory installPuroStandalone(String version, dcli.Progress? progress) {
   final puroLinuxDownloadUrl = "https://puro.dev/builds/$version/linux-x64/puro";
 
   int resultCode = -1;
-  final downloadPath = getPuroStandaloneBinPath();
+  final downloadPath = getPuroStandaloneBinPath(createIfNotExists: true);
   if (Platform.isWindows) {
     resultCode = installPuroStandaloneWindows(puroWindowsDownloadUrl, downloadPath, progress);
   } else if (Platform.isMacOS) {
