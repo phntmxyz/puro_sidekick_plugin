@@ -40,7 +40,9 @@ class VersionParser {
           projectRoot != null &&
           projectRoot!.existsSync() &&
           projectRoot!.absolute.path != packagePath.absolute.path) {
-        print('Package is part of a workspace. Use the root package pubspec.yaml to get the flutter version.');
+        print(
+          'Package is part of a workspace. Use the root package pubspec.yaml to get the flutter version.',
+        );
         final newPubspec = _readPubspecFile(projectRoot!);
         if (newPubspec != null) {
           pubspec = newPubspec;
@@ -156,8 +158,10 @@ class VersionParser {
       final parts = line.split('|');
       if (parts.length >= 3) {
         try {
-          final flutterVersion = Version.parse(parts[0].replaceAll('Flutter', '').trim());
-          final listedDartVersion = Version.parse(parts[3].replaceAll('Dart', '').trim());
+          final flutterVersion =
+              Version.parse(parts[0].replaceAll('Flutter', '').trim());
+          final listedDartVersion =
+              Version.parse(parts[3].replaceAll('Dart', '').trim());
 
           // Only add the latest version for each dart version
           if (isBetaRelease) {
@@ -172,16 +176,24 @@ class VersionParser {
     final SplayTreeMap<Version, Version> sortedVersions;
     if (useBeta) {
       sortedVersions = SplayTreeMap<Version, Version>.from(
-          betaVersionMap, (key1, key2) => betaVersionMap[key1]!.compareTo(betaVersionMap[key2]!));
+        betaVersionMap,
+        (key1, key2) => betaVersionMap[key1]!.compareTo(betaVersionMap[key2]!),
+      );
     } else {
       sortedVersions = SplayTreeMap<Version, Version>.from(
-          versionMap, (key1, key2) => versionMap[key1]!.compareTo(versionMap[key2]!));
+        versionMap,
+        (key1, key2) => versionMap[key1]!.compareTo(versionMap[key2]!),
+      );
     }
 
     return sortedVersions;
   }
 
-  String? _getBestFlutterVersion(Map<Version, Version> versions, String? dartConstraint, String? flutterConstraint) {
+  String? _getBestFlutterVersion(
+    Map<Version, Version> versions,
+    String? dartConstraint,
+    String? flutterConstraint,
+  ) {
     final availableVersions = _parseAvailableVersions();
 
     if (flutterConstraint != null) {
@@ -203,8 +215,15 @@ class VersionParser {
   }
 
   /// Test method to get the best flutter version for the given dart and flutter constraints
-  String? testGetBestFlutterVersion({String? dartConstraint, String? flutterConstraint}) {
+  String? testGetBestFlutterVersion({
+    String? dartConstraint,
+    String? flutterConstraint,
+  }) {
     final availableVersions = _parseAvailableVersions();
-    return _getBestFlutterVersion(availableVersions, dartConstraint, flutterConstraint);
+    return _getBestFlutterVersion(
+      availableVersions,
+      dartConstraint,
+      flutterConstraint,
+    );
   }
 }

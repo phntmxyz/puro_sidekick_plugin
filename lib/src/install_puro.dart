@@ -15,12 +15,16 @@ Directory installPuro({
   final puroPath = getPuroPath();
 
   if (puroPath != null && puroPath.existsSync()) {
-    print('Puro is already installed at ${puroPath.parent.parent.absolute.path}');
+    print(
+      'Puro is already installed at ${puroPath.parent.parent.absolute.path}',
+    );
     return puroPath.parent.parent;
   }
 
-  final installGlobal =
-      dcli.ask("Puro is not installed.\nDo you want to install Puro global? (y/n)", defaultValue: 'n');
+  final installGlobal = dcli.ask(
+    "Puro is not installed.\nDo you want to install Puro global? (y/n)",
+    defaultValue: 'n',
+  );
 
   final latestVersion = getLatestPuroVersion();
   print('Download Puro $latestVersion');
@@ -61,18 +65,33 @@ Directory installPuroGlobal(String version, dcli.Progress? progress) {
 }
 
 Directory installPuroStandalone(String version, dcli.Progress? progress) {
-  final puroWindowsDownloadUrl = "https://puro.dev/builds/$version/windows-x64/puro.exe";
-  final puroDarwinDownloadUrl = "https://puro.dev/builds/$version/darwin-x64/puro";
-  final puroLinuxDownloadUrl = "https://puro.dev/builds/$version/linux-x64/puro";
+  final puroWindowsDownloadUrl =
+      "https://puro.dev/builds/$version/windows-x64/puro.exe";
+  final puroDarwinDownloadUrl =
+      "https://puro.dev/builds/$version/darwin-x64/puro";
+  final puroLinuxDownloadUrl =
+      "https://puro.dev/builds/$version/linux-x64/puro";
 
   int resultCode = -1;
   final downloadPath = getPuroStandaloneBinPath(createIfNotExists: true);
   if (Platform.isWindows) {
-    resultCode = installPuroStandaloneWindows(puroWindowsDownloadUrl, downloadPath, progress);
+    resultCode = installPuroStandaloneWindows(
+      puroWindowsDownloadUrl,
+      downloadPath,
+      progress,
+    );
   } else if (Platform.isMacOS) {
-    resultCode = installPuroStandaloneMacOs(puroDarwinDownloadUrl, downloadPath, progress);
+    resultCode = installPuroStandaloneMacOs(
+      puroDarwinDownloadUrl,
+      downloadPath,
+      progress,
+    );
   } else if (Platform.isLinux) {
-    resultCode = installPuroStandaloneLinux(puroLinuxDownloadUrl, downloadPath, progress);
+    resultCode = installPuroStandaloneLinux(
+      puroLinuxDownloadUrl,
+      downloadPath,
+      progress,
+    );
   } else {
     print('Unsupported platform.');
   }
@@ -84,22 +103,29 @@ Directory installPuroStandalone(String version, dcli.Progress? progress) {
 
 String getLatestPuroVersion() {
   try {
-    const command = 'curl https://api.github.com/repos/pingbird/puro/releases?per_page=1&page=1';
-    final output = dcli.start(command, progress: Progress.capture(captureStderr: false));
+    const command =
+        'curl https://api.github.com/repos/pingbird/puro/releases?per_page=1&page=1';
+    final output =
+        dcli.start(command, progress: Progress.capture(captureStderr: false));
     if (output.exitCode != 0) {
       print('Failed to get the latest Puro version.');
       return puroFallbackVersion;
     }
     final resultJson = output.lines.join('\n');
     final result = jsonDecode(resultJson);
-    return ((result as List<dynamic>)[0] as Map<String, dynamic>)['tag_name'] as String;
+    return ((result as List<dynamic>)[0] as Map<String, dynamic>)['tag_name']
+        as String;
   } catch (e) {
     print('Failed to get the latest Puro version: $e');
     return puroFallbackVersion;
   }
 }
 
-int installPuroStandaloneMacOs(String downloadUrl, Directory downloadPath, dcli.Progress? progress) {
+int installPuroStandaloneMacOs(
+  String downloadUrl,
+  Directory downloadPath,
+  dcli.Progress? progress,
+) {
   final downloadProcess = dcli.startFromArgs(
     'bash',
     [
@@ -133,7 +159,11 @@ int installPuroStandaloneMacOs(String downloadUrl, Directory downloadPath, dcli.
   return chmodProcess.exitCode ?? -1;
 }
 
-int installPuroStandaloneLinux(String downloadUrl, Directory downloadPath, dcli.Progress? progress) {
+int installPuroStandaloneLinux(
+  String downloadUrl,
+  Directory downloadPath,
+  dcli.Progress? progress,
+) {
   final downloadProcess = dcli.startFromArgs(
     'bash',
     [
@@ -167,8 +197,13 @@ int installPuroStandaloneLinux(String downloadUrl, Directory downloadPath, dcli.
   return chmodProcess.exitCode ?? -1;
 }
 
-int installPuroStandaloneWindows(String downloadUrl, Directory downloadPath, dcli.Progress? progress) {
-  final command = 'Invoke-WebRequest -Uri "$downloadUrl" -OutFile "\$env:temp\\puro.exe"; &"\$env:temp\\puro.exe"';
+int installPuroStandaloneWindows(
+  String downloadUrl,
+  Directory downloadPath,
+  dcli.Progress? progress,
+) {
+  final command =
+      'Invoke-WebRequest -Uri "$downloadUrl" -OutFile "\$env:temp\\puro.exe"; &"\$env:temp\\puro.exe"';
 
   final process = dcli.startFromArgs(
     'powershell.exe',
@@ -182,7 +217,11 @@ int installPuroStandaloneWindows(String downloadUrl, Directory downloadPath, dcl
   return process.exitCode ?? -1;
 }
 
-int installPuroGlobalUnix(String version, Directory downloadPath, dcli.Progress? progress) {
+int installPuroGlobalUnix(
+  String version,
+  Directory downloadPath,
+  dcli.Progress? progress,
+) {
   final process = dcli.startFromArgs(
     'bash',
     [
@@ -198,7 +237,11 @@ int installPuroGlobalUnix(String version, Directory downloadPath, dcli.Progress?
   return process.exitCode ?? -1;
 }
 
-int installPuroGlobalWindows(String version, Directory downloadPath, dcli.Progress? progress) {
+int installPuroGlobalWindows(
+  String version,
+  Directory downloadPath,
+  dcli.Progress? progress,
+) {
   final command =
       'Invoke-WebRequest -Uri "https://puro.dev/builds/$version/windows-x64/puro.exe" -OutFile "\$env:temp\\puro.exe"; &"\$env:temp\\puro.exe" install-puro --promote"';
 

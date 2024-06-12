@@ -34,7 +34,8 @@ extension MainFileModifiers on ModifiableSourceFile {
   void addImport(String import) {
     final imports = analyze().unit.directives.whereType<ImportDirective>();
     // find position to insert import alphabetically
-    final after = imports.firstOrNullWhere((line) => line.toSource().compareTo(import) > 0);
+    final after = imports
+        .firstOrNullWhere((line) => line.toSource().compareTo(import) > 0);
     final position = after?.end ?? imports.lastOrNull?.end ?? 0;
     // TODO only add if import does not yet exist
 
@@ -51,7 +52,8 @@ void setNamedParameter(
 }) {
   final argumentList = methodInvocation.argumentList;
   final hasArguments = argumentList.arguments.isNotEmpty;
-  final NamedExpression? existingArgument = argumentList.arguments.firstOrNullWhere(
+  final NamedExpression? existingArgument =
+      argumentList.arguments.firstOrNullWhere(
     (arg) => arg is NamedExpression && arg.name.label.name == name,
   ) as NamedExpression?;
   final commaToken = argumentList.rightParenthesis.previous;
@@ -148,5 +150,7 @@ extension on Token {
 }
 
 extension on MethodInvocation {
-  Token? get semicolon => endToken.nextTokens().firstOrNullWhere((token) => token.type == TokenType.SEMICOLON);
+  Token? get semicolon => endToken
+      .nextTokens()
+      .firstOrNullWhere((token) => token.type == TokenType.SEMICOLON);
 }

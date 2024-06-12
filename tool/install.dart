@@ -1,5 +1,6 @@
 import 'package:puro_sidekick_plugin/puro_sidekick_plugin.dart';
-import 'package:sidekick_core/sidekick_core.dart' hide cliName, mainProject, repository;
+import 'package:sidekick_core/sidekick_core.dart'
+    hide cliName, mainProject, repository;
 import 'package:sidekick_core/sidekick_core.dart';
 import 'package:sidekick_plugin_installer/sidekick_plugin_installer.dart';
 

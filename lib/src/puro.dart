@@ -46,7 +46,11 @@ File? getPuroPath() {
   if (path == null) {
     final standalonePath = getPuroStandaloneBinPath();
     if (standalonePath.existsSync()) {
-      final result = dcli.find('puro', workingDirectory: standalonePath.path, recursive: false);
+      final result = dcli.find(
+        'puro',
+        workingDirectory: standalonePath.path,
+        recursive: false,
+      );
       path = result.firstLine;
     }
   }
@@ -55,7 +59,9 @@ File? getPuroPath() {
 
 /// Returns the puro standalone bin path. It may not exist.
 Directory getPuroStandaloneBinPath({bool createIfNotExists = false}) {
-  final path = Directory("${SidekickContext.sidekickPackage.buildDir.absolute.path}/puro/bin/");
+  final path = Directory(
+    "${SidekickContext.sidekickPackage.buildDir.absolute.path}/puro/bin/",
+  );
   if (createIfNotExists && !path.existsSync()) {
     path.createSync(recursive: true);
   }

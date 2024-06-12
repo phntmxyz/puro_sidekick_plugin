@@ -9,7 +9,8 @@ import 'package:puro_sidekick_plugin/src/version_parser.dart';
 import 'package:sidekick_core/sidekick_core.dart';
 
 export 'package:puro_sidekick_plugin/src/commands/puro_command.dart';
-export 'package:puro_sidekick_plugin/src/flutter_sdk.dart' hide createSymlink, puroFlutterSdkPath;
+export 'package:puro_sidekick_plugin/src/flutter_sdk.dart'
+    hide createSymlink, puroFlutterSdkPath;
 export 'package:puro_sidekick_plugin/src/puro.dart';
 
 void initializePuro(Directory sdk) {
@@ -46,7 +47,10 @@ void _setupFlutterEnvironment() {
     puro(['create', sdkVersion, sdkVersion], progress: Progress.print());
   }
   print('Use Puro environment: $sdkVersion');
-  puro(['use', '--project', entryWorkingDirectory.path, sdkVersion], progress: Progress.print());
+  puro(
+    ['use', '--project', entryWorkingDirectory.path, sdkVersion],
+    progress: Progress.print(),
+  );
 }
 
 /// Thrown when puro could not be installed

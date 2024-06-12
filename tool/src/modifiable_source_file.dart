@@ -64,9 +64,11 @@ class ModifiableSourceFile {
     _updateTempFile();
 
     final file = _tempFile!;
-    final collection = AnalysisContextCollection(includedPaths: [file.absolute.path]);
+    final collection =
+        AnalysisContextCollection(includedPaths: [file.absolute.path]);
     final context = collection.contextFor(file.absolute.path);
-    final parsedUnit = context.currentSession.getParsedUnit(file.absolute.path) as ParsedUnitResult;
+    final parsedUnit = context.currentSession.getParsedUnit(file.absolute.path)
+        as ParsedUnitResult;
     return parsedUnit;
   }
 }

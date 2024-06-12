@@ -88,8 +88,12 @@ resolution: local
   });
 }
 
-Directory _createWorkspacePubspec(String rootPubspecContent, String packagePubspecContent) {
-  final tempDir = Directory.systemTemp.createTempSync('puro_sidekick_plugin_test');
+Directory _createWorkspacePubspec(
+  String rootPubspecContent,
+  String packagePubspecContent,
+) {
+  final tempDir =
+      Directory.systemTemp.createTempSync('puro_sidekick_plugin_test');
   addTearDown(() => tempDir.deleteSync(recursive: true));
 
   final pubspecFile = File('${tempDir.path}/pubspec.yaml');

@@ -67,7 +67,10 @@ void main() {
 
 extension on ModifiableSourceFile {
   MethodInvocation findMethodInvocationByName(String name) {
-    return analyze().nodes.whereType<MethodInvocation>().firstWhere((node) => node.methodName.name == name);
+    return analyze()
+        .nodes
+        .whereType<MethodInvocation>()
+        .firstWhere((node) => node.methodName.name == name);
   }
 }
 

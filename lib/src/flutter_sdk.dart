@@ -4,7 +4,9 @@ import 'package:sidekick_core/sidekick_core.dart';
 
 /// Create an empty folder for flutter sdk symlink
 String flutterSdkSymlink() {
-  final flutterPath = Directory("${SidekickContext.sidekickPackage.buildDir.absolute.path}/flutter");
+  final flutterPath = Directory(
+    "${SidekickContext.sidekickPackage.buildDir.absolute.path}/flutter",
+  );
   flutterPath.createSync(recursive: true);
   return flutterPath.absolute.path;
 }
