@@ -14,7 +14,8 @@ export 'package:puro_sidekick_plugin/src/flutter_sdk.dart'
 export 'package:puro_sidekick_plugin/src/puro.dart';
 
 void initializePuro(SdkInitializerContext context) {
-  print('Initialize Puro with SDK Context: $context');
+  print(
+      'Initialize Puro with SdkInitializerContext{flutterSdk: ${context.flutterSdk}, dartSdk: ${context.dartSdk}, packageDir: ${context.packageDir}, workingDirectory: ${context.workingDirectory}');
 
   // Create folder for flutter sdk symlink
   final symlinkPath = flutterSdkSymlink();
