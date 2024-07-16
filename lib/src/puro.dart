@@ -17,8 +17,6 @@ Future<ProcessCompletion> puro(
     throw PuroNotFoundException();
   }
 
-  await initializeSdkForPackage(workingDirectory);
-
   int exitCode = -1;
   try {
     final process = dcli.startFromArgs(

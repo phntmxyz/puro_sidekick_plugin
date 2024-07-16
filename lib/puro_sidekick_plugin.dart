@@ -37,9 +37,6 @@ void _setupFlutterEnvironment(SdkInitializerContext context) {
     packagePath: context.packageDir?.root ?? SidekickContext.projectRoot,
     projectRoot: SidekickContext.projectRoot,
   ).getMaxFlutterSdkVersionFromPubspec();
-  if (sdkVersion == null) {
-    throw Exception('No Flutter SDK version found in pubspec.yaml');
-  }
 
   final progress = Progress.capture();
   puro(['ls'], progress: progress);

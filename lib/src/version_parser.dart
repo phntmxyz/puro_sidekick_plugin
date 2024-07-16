@@ -27,11 +27,13 @@ class VersionParser {
   /// If the flutter version is not available, it reads the dart sdk version
   /// and returns the flutter version of the upper bound dart version constraint
   /// Returns null if the version is not found
-  String? getMaxFlutterSdkVersionFromPubspec() {
+  String getMaxFlutterSdkVersionFromPubspec() {
     try {
       YamlMap? pubspec = _readPubspecFile(packagePath);
       if (pubspec == null) {
-        return null;
+        throw VersionParserException(
+          msg: 'No pubspec.yaml found in the package directory: $packagePath',
+        );
       }
 
       // Check if the package is part of a workspace
@@ -62,6 +64,7 @@ class VersionParser {
 
       if (flutterConstraint != null) {
         final flutterVersion = VersionConstraint.parse(flutterConstraint);
+        print('Found flutter version constraint: $flutterVersion');
         for (final version in availableVersions.values) {
           if (flutterVersion.allows(version)) {
             return version.toString();
@@ -69,26 +72,31 @@ class VersionParser {
         }
       } else if (dartConstraint != null) {
         final dartVersion = VersionConstraint.parse(dartConstraint);
+        print('Found dart version constraint: $dartVersion');
         for (final version in availableVersions.keys) {
           if (dartVersion.allows(version)) {
             return availableVersions[version].toString();
           }
         }
-      } else {
-        print('No flutter or dart version constraint found in pubspec.yaml');
-        return null;
       }
-
-      return null;
+      throw VersionParserException(
+        msg:
+            'No valid flutter or dart version constraint found in pubspec.yaml',
+      );
     } on FileSystemException catch (e) {
-      print('Error reading pubspec.yaml: $e');
-      return null;
+      throw VersionParserException(
+        msg: 'Error reading pubspec.yaml',
+        innerException: e,
+      );
     } on YamlException catch (e) {
-      print('Error parsing pubspec.yaml: $e');
-      return null;
+      throw VersionParserException(
+        msg: 'Error parsing pubspec.yaml',
+        innerException: e,
+      );
     } catch (e) {
-      print('Unexpected error: $e');
-      return null;
+      throw VersionParserException(
+        msg: 'Unexpected error: $e',
+      );
     }
   }
 
@@ -225,5 +233,20 @@ class VersionParser {
       dartConstraint,
       flutterConstraint,
     );
+  }
+}
+
+class VersionParserException implements Exception {
+  VersionParserException({
+    this.msg,
+    this.innerException,
+  });
+
+  String? msg;
+  Exception? innerException;
+
+  @override
+  String toString() {
+    return 'Error parsing SDK versions: $msg ${innerException != null ? '\n$innerException' : ''}';
   }
 }
