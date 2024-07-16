@@ -1,6 +1,5 @@
 import 'package:puro_sidekick_plugin/puro_sidekick_plugin.dart';
-import 'package:sidekick_core/sidekick_core.dart'
-    hide cliName, mainProject, repository;
+import 'package:sidekick_core/sidekick_core.dart' hide cliName, mainProject, repository;
 import 'package:sidekick_core/sidekick_core.dart';
 import 'package:sidekick_plugin_installer/sidekick_plugin_installer.dart';
 
@@ -31,7 +30,7 @@ Future<void> main() async {
     "import 'package:puro_sidekick_plugin/puro_sidekick_plugin.dart';",
   );
   mainSourceFile.registerSdkInitializer(
-    'addFlutterSdkInitializer(initializePuro);',
+    'addSdkInitializer(initializePuro);',
   );
   mainSourceFile.flush();
 
@@ -57,7 +56,14 @@ Future<void> main() async {
     );
   }
 
-  initializePuro(Directory.current);
+  initializePuro(
+    SdkInitializerContext(
+      flutterSdk: flutterSdk,
+      dartSdk: dartSdk,
+      packageDir: SidekickContext.sidekickPackage,
+      workingDirectory: Directory.current,
+    ),
+  );
   puro(['flutter', '--version']);
 
   print(green('Successfully installed sidekick Puro plugin'));
