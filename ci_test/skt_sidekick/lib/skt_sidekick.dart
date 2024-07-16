@@ -9,7 +9,7 @@ Future<void> runSkt(List<String> args) async {
     mainProjectPath: '.',
     flutterSdkPath: flutterSdkSymlink(),
   );
-  addFlutterSdkInitializer(initializePuro);
+  addSdkInitializer(initializePuro);
 
   runner
     ..addCommand(FlutterCommand())

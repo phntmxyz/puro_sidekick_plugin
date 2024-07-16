@@ -4,15 +4,17 @@ version: 0.0.1
 publish_to: none
 
 environment:
-  sdk: ">=3.2.6 <4.0.0"
+  sdk: ">=3.3.0 <4.0.0"
 
 executables:
   main:
 
 dependencies:
   puro_sidekick_plugin:
-    git: https://github.com/phntmxyz/puro_sidekick_plugin
-  sidekick_core: ^2.1.2
+    git:
+      url: https://github.com/phntmxyz/puro_sidekick_plugin
+      ref: update-core-to-3.0.0
+  sidekick_core: ^3.0.0-preview.1
 
 dev_dependencies:
   lint: ^2.0.0
@@ -23,4 +25,4 @@ dependency_overrides:
 
 # generated code, do not edit this manually
 sidekick:
-  cli_version: 2.1.2
+  cli_version: 3.0.0-preview.1
