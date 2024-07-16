@@ -13,15 +13,7 @@ class PuroCommand extends ForwardCommand {
   Future<void> run() async {
     final args = argResults!.arguments;
 
-    initializePuro(
-      SdkInitializerContext(
-        flutterSdk: flutterSdk,
-        dartSdk: dartSdk,
-        packageDir: SidekickContext.sidekickPackage,
-        workingDirectory: Directory.current,
-      ),
-    );
-
-    exitCode = puro(args);
+    final completion = await puro(args, nothrow: true);
+    exitCode = completion.exitCode ?? 1;
   }
 }
