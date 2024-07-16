@@ -3,6 +3,20 @@ name: Integration Tests
 on: [ push ]
 
 jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.22.0'
+          channel: 'stable'
+
+      - uses: actions/checkout@v4
+
+      - name: Run tests
+        run: flutter test
+
   build:
     runs-on: ubuntu-latest
 
