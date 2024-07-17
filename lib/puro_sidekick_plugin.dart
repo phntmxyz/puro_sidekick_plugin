@@ -13,7 +13,7 @@ export 'package:puro_sidekick_plugin/src/flutter_sdk.dart'
     hide createSymlink, puroFlutterSdkPath;
 export 'package:puro_sidekick_plugin/src/puro.dart';
 
-void initializePuro(Directory sdk) {
+void initializePuro(SdkInitializerContext context) {
   // Create folder for flutter sdk symlink
   final symlinkPath = flutterSdkSymlink();
 
@@ -21,7 +21,7 @@ void initializePuro(Directory sdk) {
   dcli.env['PURO_ROOT'] = puroRootDir.absolute.path;
 
   // Setup puro environment
-  _setupFlutterEnvironment();
+  _setupFlutterEnvironment(context);
 
   // Create symlink to puro flutter sdk
   final flutterPath = puroFlutterSdkPath();
@@ -29,14 +29,11 @@ void initializePuro(Directory sdk) {
   createSymlink(symlinkPath, flutterPath);
 }
 
-void _setupFlutterEnvironment() {
+void _setupFlutterEnvironment(SdkInitializerContext context) {
   final sdkVersion = VersionParser(
-    packagePath: entryWorkingDirectory,
+    packagePath: context.packageDir?.root ?? SidekickContext.projectRoot,
     projectRoot: SidekickContext.projectRoot,
   ).getMaxFlutterSdkVersionFromPubspec();
-  if (sdkVersion == null) {
-    throw Exception('No Flutter SDK version found in pubspec.yaml');
-  }
 
   final progress = Progress.capture();
   puro(['ls'], progress: progress);

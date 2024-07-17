@@ -13,8 +13,7 @@ class PuroCommand extends ForwardCommand {
   Future<void> run() async {
     final args = argResults!.arguments;
 
-    initializePuro(Directory.current);
-
-    exitCode = puro(args);
+    final completion = await puro(args, nothrow: true);
+    exitCode = completion.exitCode ?? 1;
   }
 }

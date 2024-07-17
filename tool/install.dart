@@ -31,7 +31,7 @@ Future<void> main() async {
     "import 'package:puro_sidekick_plugin/puro_sidekick_plugin.dart';",
   );
   mainSourceFile.registerSdkInitializer(
-    'addFlutterSdkInitializer(initializePuro);',
+    'addSdkInitializer(initializePuro);',
   );
   mainSourceFile.flush();
 
@@ -57,8 +57,11 @@ Future<void> main() async {
     );
   }
 
-  initializePuro(Directory.current);
-  puro(['flutter', '--version']);
+  final initialPackage =
+      DartPackage.fromDirectory(SidekickContext.projectRoot) ??
+          SidekickContext.sidekickPackage;
+  initializePuro(SdkInitializerContext(packageDir: initialPackage));
+  puro(['flutter', '--version'], workingDirectory: initialPackage.root);
 
   print(green('Successfully installed sidekick Puro plugin'));
   print('\nUsage: You can now execute the commands:\n'

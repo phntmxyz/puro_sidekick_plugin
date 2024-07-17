@@ -4,36 +4,44 @@ import 'package:sidekick_core/sidekick_core.dart';
 /// Executes Flutter CLI via puro
 ///
 /// https://github.com/phntmxyz/puro_sidekick_plugin
-int puro(
+Future<ProcessCompletion> puro(
   List<String> args, {
   Directory? workingDirectory,
   dcli.Progress? progress,
+  bool nothrow = false,
   String Function()? throwOnError,
-}) {
-  final workingDir = entryWorkingDirectory.absolute;
-
+}) async {
   final puroPath = getPuroPath();
 
   if (puroPath == null) {
     throw PuroNotFoundException();
   }
 
-  final process = dcli.startFromArgs(
-    puroPath.path,
-    ['--no-update-check', '--no-install', ...args],
-    workingDirectory: workingDir.path,
-    nothrow: true,
-    progress: progress,
-    terminal: progress == null,
-  );
+  int exitCode = -1;
+  try {
+    final process = dcli.startFromArgs(
+      puroPath.path,
+      ['--no-update-check', '--no-install', ...args],
+      workingDirectory: workingDirectory?.absolute.path,
+      nothrow: nothrow || throwOnError != null,
+      progress: progress,
+      terminal: progress == null,
+    );
 
-  final exitCode = process.exitCode ?? -1;
-
+    exitCode = process.exitCode ?? -1;
+  } catch (e) {
+    if (e is dcli.RunException) {
+      exitCode = e.exitCode ?? 1;
+    }
+    if (throwOnError == null) {
+      rethrow;
+    }
+  }
   if (exitCode != 0 && throwOnError != null) {
     throw throwOnError();
   }
 
-  return exitCode;
+  return ProcessCompletion(exitCode: exitCode);
 }
 
 File? getPuroPath() {

@@ -36,7 +36,7 @@ The plugin interprets Flutter and Dart version constraints and defaults to the m
 name: package_name
 
 environment:
-  sdk: '>=3.0.0 <4.0.0'
+  sdk: '>=3.3.0 <4.0.0'
 ```
 
 ```bash
@@ -51,7 +51,7 @@ name: package_name
 
 environment:
   flutter: '^3.19.6'
-  sdk: '>=3.0.0 <4.0.0'
+  sdk: '>=3.3.0 <4.0.0'
 ```
 
 ```bash
