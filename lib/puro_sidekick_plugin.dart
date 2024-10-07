@@ -25,6 +25,7 @@ void initializePuro(SdkInitializerContext context) {
 
   // Create symlink to puro flutter sdk
   final flutterPath = puroFlutterSdkPath();
+  dcli.env['PURO_FLUTTER_BIN'] = flutterPath;
   print('Use Puro Flutter SDK: $flutterPath');
   createSymlink(symlinkPath, flutterPath);
 }
