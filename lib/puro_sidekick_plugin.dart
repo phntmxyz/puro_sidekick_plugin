@@ -24,15 +24,21 @@ void initializePuro(SdkInitializerContext context) {
   _setupFlutterEnvironment(context);
 
   // Create symlink to puro flutter sdk
-  final flutterPath = puroFlutterSdkPath();
-  dcli.env['PURO_FLUTTER_BIN'] = flutterPath;
+  final packageDir = context.packageDir?.root ?? SidekickContext.projectRoot;
+  final flutterPath = puroFlutterSdkPath(packageDir);
+
+  final flutterBinPath = Directory(flutterPath).directory('bin');
+
+  dcli.env['PURO_FLUTTER_BIN'] = flutterBinPath.absolute.path;
   print('Use Puro Flutter SDK: $flutterPath');
   createSymlink(symlinkPath, flutterPath);
 }
 
 void _setupFlutterEnvironment(SdkInitializerContext context) {
+  final packageDir = context.packageDir?.root ?? SidekickContext.projectRoot;
+
   final sdkVersion = VersionParser(
-    packagePath: context.packageDir?.root ?? SidekickContext.projectRoot,
+    packagePath: packageDir,
     projectRoot: SidekickContext.projectRoot,
   ).getMaxFlutterSdkVersionFromPubspec();
 
@@ -46,7 +52,7 @@ void _setupFlutterEnvironment(SdkInitializerContext context) {
   }
   print('Use Puro environment: $sdkVersion');
   puro(
-    ['use', '--project', entryWorkingDirectory.path, sdkVersion],
+    ['use', '--project', packageDir.absolute.path, sdkVersion],
     progress: Progress.print(),
   );
 }

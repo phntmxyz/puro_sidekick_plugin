@@ -13,19 +13,20 @@ String flutterSdkSymlink() {
 
 /// Returns the Flutter SDK path from puro environment
 /// throws [PuroNotFoundException] if puro is not found
-String puroFlutterSdkPath() {
+String puroFlutterSdkPath(Directory packageDir) {
   String? envPath;
   final pathMatcher = RegExp(r'.*executing: \[(.*)\].*');
+  final progress = Progress.capture();
   puro(
     ['flutter', '-v', '--version'],
-    progress: Progress((line) {
-      if (envPath != null) return;
-      final match = pathMatcher.firstMatch(line);
-      if (match != null) {
-        envPath = match.group(1);
-      }
-    }),
+    progress: progress,
+    workingDirectory: packageDir,
   );
+  final currentEnvs = progress.lines.join('\n');
+  final match = pathMatcher.firstMatch(currentEnvs);
+  if (match != null) {
+    envPath = match.group(1);
+  }
   if (envPath == null) {
     throw PuroNotFoundException();
   }
