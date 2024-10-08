@@ -126,9 +126,9 @@ class VersionParser {
 
   YamlMap? _readPubspecFile(Directory packagePath) {
     try {
-      final package = DartPackage.fromDirectory(packagePath);
-      final pubspecFile = package?.pubspec;
-      if (pubspecFile == null || !pubspecFile.existsSync()) {
+      final normalizedDir = Directory(normalize(packagePath.path));
+      final pubspecFile = normalizedDir.file('pubspec.yaml');
+      if (!pubspecFile.existsSync()) {
         print('pubspec.yaml not found in the package directory');
         return null;
       }
