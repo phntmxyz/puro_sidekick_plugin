@@ -4,7 +4,7 @@ import 'package:dcli/dcli.dart' as dcli;
 import 'package:puro_sidekick_plugin/puro_sidekick_plugin.dart';
 import 'package:sidekick_core/sidekick_core.dart';
 
-const puroFallbackVersion = '1.4.6';
+const puroFallbackVersion = '1.4.10';
 
 /// Executes Flutter CLI via puro
 ///

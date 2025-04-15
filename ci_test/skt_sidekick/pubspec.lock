@@ -113,14 +113,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "4.1.0"
-  dart_console2:
-    dependency: transitive
-    description:
-      name: dart_console2
-      sha256: "300833ffdd8c465d454cb5007c7f29d28ac8246af5abd922f8c490e1e87c894f"
-      url: "https://pub.dev"
-    source: hosted
-    version: "3.0.0"
   dartx:
     dependency: transitive
     description:
@@ -130,7 +122,7 @@ packages:
     source: hosted
     version: "1.2.0"
   dcli:
-    dependency: "direct overridden"
+    dependency: "direct main"
     description:
       name: dcli
       sha256: "5f24cf51462b172d44c9a507543201f229cf43e446c67a5073eef5d88afc329f"
@@ -345,14 +337,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.1.4"
-  pubspec2:
-    dependency: transitive
-    description:
-      name: pubspec2
-      sha256: "7b1fd81927f1da6d88457c83b51134e1bc8cb07638bd8d9e205b2ce1cd9ec091"
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.4.2"
   pubspec_lock:
     dependency: transitive
     description:
@@ -365,10 +349,10 @@ packages:
     dependency: transitive
     description:
       name: pubspec_manager
-      sha256: b2674161f3f69ed07bc164dc4172afc190d56f060a293a8eb6fa691e5ddf9b5c
+      sha256: "7d3e74f0f673fdc441002d45a66dcb37d26dcea99ae730c4fd6671c42423149c"
       url: "https://pub.dev"
     source: hosted
-    version: "1.0.0"
+    version: "1.0.1"
   pubspec_parse:
     dependency: transitive
     description:
@@ -383,7 +367,7 @@ packages:
       path: "../.."
       relative: true
     source: path
-    version: "1.0.0"
+    version: "1.1.0"
   recase:
     dependency: transitive
     description:
@@ -428,10 +412,10 @@ packages:
     dependency: "direct main"
     description:
       name: sidekick_core
-      sha256: "4f4fff6eebf3ddabdf8d64a6c3d4c7d431e9fb500bbce0a1f4aa5dbd6d066a5e"
+      sha256: "482c162a9df09353e2054308aec337edefa4b68be7c070b7fc468717b283d1a3"
       url: "https://pub.dev"
     source: hosted
-    version: "3.0.0-preview.2"
+    version: "3.0.0-preview.5"
   source_span:
     dependency: transitive
     description:
@@ -548,10 +532,10 @@ packages:
     dependency: transitive
     description:
       name: win32
-      sha256: "5a751eddf9db89b3e5f9d50c20ab8612296e4e8db69009788d6c8b060a84191c"
+      sha256: daf97c9d80197ed7b619040e86c8ab9a9dad285e7671ee7390f9180cc828a51e
       url: "https://pub.dev"
     source: hosted
-    version: "4.1.4"
+    version: "5.10.1"
   yaml:
     dependency: transitive
     description:
@@ -569,4 +553,4 @@ packages:
     source: hosted
     version: "2.2.1"
 sdks:
-  dart: ">=3.4.4 <3.999.0"
+  dart: ">=3.5.4 <3.999.0"
