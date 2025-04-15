@@ -56,7 +56,7 @@ Future<void> initializePuro(SdkInitializerContext context) async {
   dcli.env['PURO_ROOT'] = puroRootDir.absolute.path;
 
   // Setup puro environment
-  _setupFlutterEnvironment(context);
+  await _setupFlutterEnvironment(context);
 
   // Create symlink to puro flutter sdk
   final packageDir = context.packageDir?.root ?? SidekickContext.projectRoot;
