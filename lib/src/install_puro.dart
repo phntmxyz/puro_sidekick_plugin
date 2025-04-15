@@ -12,15 +12,6 @@ const puroFallbackVersion = '1.4.10';
 Directory installPuro({
   dcli.Progress? progress,
 }) {
-  final puroPath = getPuroPath();
-
-  if (puroPath != null && puroPath.existsSync()) {
-    print(
-      'Puro is already installed at ${puroPath.parent.parent.absolute.path}',
-    );
-    return puroPath.parent.parent;
-  }
-
   final installGlobal = dcli.ask(
     "Puro is not installed.\nDo you want to install Puro global? (y/N)",
     defaultValue: 'n',
