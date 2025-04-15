@@ -14,7 +14,7 @@ Future<void> main() async {
   requireDependencyVersion(
     package,
     'sidekick_core',
-    VersionConstraint.parse('>=0.11.0'),
+    VersionConstraint.parse('>=3.0.0-preview.5 <4.0.0'),
   );
 
   addSelfAsDependency();
