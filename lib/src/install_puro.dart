@@ -22,7 +22,7 @@ Directory installPuro({
   }
 
   final installGlobal = dcli.ask(
-    "Puro is not installed.\nDo you want to install Puro global? (y/n)",
+    "Puro is not installed.\nDo you want to install Puro global? (y/N)",
     defaultValue: 'n',
   );
 

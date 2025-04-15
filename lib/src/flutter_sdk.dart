@@ -30,7 +30,7 @@ String puroFlutterSdkPath(Directory packageDir) {
   if (envPath == null) {
     throw PuroNotFoundException();
   }
-  return envPath!;
+  return envPath;
 }
 
 /// Create a symlink from link to target

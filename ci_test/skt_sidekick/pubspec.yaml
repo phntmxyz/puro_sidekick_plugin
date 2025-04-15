@@ -13,13 +13,9 @@ dependencies:
   puro_sidekick_plugin:
     path: ../../
   sidekick_core: ^3.0.0-preview.5
-  dcli: ^7.0.2
 
 dev_dependencies:
   lint: ^2.0.0
-
-dependency_overrides:
-  dcli: 4.0.4
 
 # generated code, do not edit this manually
 sidekick:
