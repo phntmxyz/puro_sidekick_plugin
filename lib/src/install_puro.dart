@@ -4,7 +4,7 @@ import 'package:dcli/dcli.dart' as dcli;
 import 'package:puro_sidekick_plugin/puro_sidekick_plugin.dart';
 import 'package:sidekick_core/sidekick_core.dart';
 
-const puroFallbackVersion = '1.4.6';
+const puroFallbackVersion = '1.4.10';
 
 /// Executes Flutter CLI via puro
 ///
@@ -12,17 +12,8 @@ const puroFallbackVersion = '1.4.6';
 Directory installPuro({
   dcli.Progress? progress,
 }) {
-  final puroPath = getPuroPath();
-
-  if (puroPath != null && puroPath.existsSync()) {
-    print(
-      'Puro is already installed at ${puroPath.parent.parent.absolute.path}',
-    );
-    return puroPath.parent.parent;
-  }
-
   final installGlobal = dcli.ask(
-    "Puro is not installed.\nDo you want to install Puro global? (y/n)",
+    "Puro is not installed.\nDo you want to install Puro global? (y/N)",
     defaultValue: 'n',
   );
 

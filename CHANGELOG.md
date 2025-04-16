@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.1.0
+- Update to Sidekick 3.0.0-preview.5
+- Add Puro update check
+- Min Dart version is now 3.5.0
+
 ## 1.0.0
 
 - Update to Sidekick 3.0

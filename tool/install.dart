@@ -14,7 +14,7 @@ Future<void> main() async {
   requireDependencyVersion(
     package,
     'sidekick_core',
-    VersionConstraint.parse('>=0.11.0'),
+    VersionConstraint.parse('>=3.0.0-preview.5 <4.0.0'),
   );
 
   addSelfAsDependency();
@@ -39,19 +39,19 @@ Future<void> main() async {
   // Add them in case they are not
   final mainContent = mainFile.readAsStringSync();
   if (!mainContent.contains('FlutterCommand()')) {
-    registerPlugin(
+    await registerPlugin(
       sidekickCli: package,
       command: 'FlutterCommand()',
     );
   }
   if (!mainContent.contains('DartCommand()')) {
-    registerPlugin(
+    await registerPlugin(
       sidekickCli: package,
       command: 'DartCommand()',
     );
   }
   if (!mainContent.contains('PuroCommand()')) {
-    registerPlugin(
+    await registerPlugin(
       sidekickCli: package,
       command: 'PuroCommand()',
     );
@@ -60,8 +60,8 @@ Future<void> main() async {
   final initialPackage =
       DartPackage.fromDirectory(SidekickContext.projectRoot) ??
           SidekickContext.sidekickPackage;
-  initializePuro(SdkInitializerContext(packageDir: initialPackage));
-  puro(['flutter', '--version'], workingDirectory: initialPackage.root);
+  await initializePuro(SdkInitializerContext(packageDir: initialPackage));
+  await puro(['flutter', '--version'], workingDirectory: initialPackage.root);
 
   print(green('Successfully installed sidekick Puro plugin'));
   print('\nUsage: You can now execute the commands:\n'

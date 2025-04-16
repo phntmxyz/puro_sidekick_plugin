@@ -13,15 +13,50 @@ export 'package:puro_sidekick_plugin/src/flutter_sdk.dart'
     hide createSymlink, puroFlutterSdkPath;
 export 'package:puro_sidekick_plugin/src/puro.dart';
 
-void initializePuro(SdkInitializerContext context) {
+Future<void> initializePuro(SdkInitializerContext context) async {
   // Create folder for flutter sdk symlink
   final symlinkPath = flutterSdkSymlink();
 
-  final puroRootDir = installPuro();
+  Directory? puroRootDir;
+  final puroPath = getPuroPath();
+
+  // Check if puro is already installed
+  if (puroPath != null && puroPath.existsSync()) {
+    print(
+      'Puro is already installed at ${puroPath.parent.parent.absolute.path}',
+    );
+
+    // Check if puro is up to date
+    print('Checking for updates...');
+    final latestVersion = Version.parse(getLatestPuroVersion());
+    print('Latest Puro version: $latestVersion');
+
+    final currentPuro = getCurrentPuroVersion();
+    final currentVersion = Version.parse(currentPuro.version);
+    print(
+      'Current Puro version: $currentVersion - Standalone: ${currentPuro.standalone}',
+    );
+    if (currentVersion < latestVersion) {
+      print('Puro is outdated. Updating to $latestVersion');
+      if (currentPuro.standalone) {
+        puroRootDir = installPuro();
+      } else {
+        await puro(['upgrade-puro'], progress: Progress.print());
+        puroRootDir = puroPath.parent.parent;
+      }
+    } else {
+      print('Puro is up to date.');
+      puroRootDir = puroPath.parent.parent;
+    }
+  } else {
+    // Install puro
+    puroRootDir = installPuro();
+  }
+
   dcli.env['PURO_ROOT'] = puroRootDir.absolute.path;
 
   // Setup puro environment
-  _setupFlutterEnvironment(context);
+  await _setupFlutterEnvironment(context);
 
   // Create symlink to puro flutter sdk
   final packageDir = context.packageDir?.root ?? SidekickContext.projectRoot;
@@ -34,7 +69,7 @@ void initializePuro(SdkInitializerContext context) {
   createSymlink(symlinkPath, flutterPath);
 }
 
-void _setupFlutterEnvironment(SdkInitializerContext context) {
+Future<void> _setupFlutterEnvironment(SdkInitializerContext context) async {
   final packageDir = context.packageDir?.root ?? SidekickContext.projectRoot;
 
   final sdkVersion = VersionParser(
@@ -43,15 +78,15 @@ void _setupFlutterEnvironment(SdkInitializerContext context) {
   ).getMaxFlutterSdkVersionFromPubspec();
 
   final progress = Progress.capture();
-  puro(['ls'], progress: progress);
+  await puro(['ls'], progress: progress);
   final currentEnvs = progress.lines.join('\n');
 
   if (!currentEnvs.contains(sdkVersion)) {
     print('Create new Puro environment: $sdkVersion');
-    puro(['create', sdkVersion, sdkVersion], progress: Progress.print());
+    await puro(['create', sdkVersion, sdkVersion], progress: Progress.print());
   }
   print('Use Puro environment: $sdkVersion');
-  puro(
+  await puro(
     ['use', '--project', packageDir.absolute.path, sdkVersion],
     progress: Progress.print(),
   );
@@ -63,4 +98,31 @@ class PuroInstallationFailedException implements Exception {
   String toString() {
     return 'Puro could not be installer. Please install puro first. Visit https://puro.dev/';
   }
+}
+
+({bool standalone, String version}) getCurrentPuroVersion() {
+  final puroPath = getPuroPath();
+  if (puroPath == null) {
+    throw PuroInstallationFailedException();
+  }
+  final versionLine = dcli
+      .start(
+        'puro --version',
+        progress: Progress.capture(),
+        workingDirectory: puroPath.parent.parent.absolute.path,
+      )
+      .firstLine;
+
+  final regex = RegExp(r'\b\d+\.\d+\.\d+\b');
+  final match = regex.firstMatch(versionLine ?? '');
+
+  String? version;
+  if (match != null) {
+    version = match.group(0);
+  }
+  if (version == null) {
+    throw PuroInstallationFailedException();
+  }
+  final standalone = versionLine?.contains('standalone') ?? false;
+  return (standalone: standalone, version: version);
 }
