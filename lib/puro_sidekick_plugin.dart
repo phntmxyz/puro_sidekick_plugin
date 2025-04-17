@@ -19,19 +19,28 @@ Future<void> initializePuro(SdkInitializerContext context) async {
 
   Directory? puroRootDir;
   final puroPath = getPuroPath();
+  bool checkForUpdates = false;
 
   // Check if puro is already installed
   if (puroPath != null && puroPath.existsSync()) {
     print(
       'Puro is already installed at ${puroPath.parent.parent.absolute.path}',
     );
+    puroRootDir = puroPath.parent.parent;
+    checkForUpdates = true;
+  } else {
+    // Install puro
+    puroRootDir = installPuro();
+  }
+  dcli.env['PURO_ROOT'] = puroRootDir.absolute.path;
 
-    // Check if puro is up to date
+  // Check if puro is up to date
+  if (checkForUpdates) {
     print('Checking for updates...');
     final latestVersion = Version.parse(getLatestPuroVersion());
     print('Latest Puro version: $latestVersion');
 
-    final currentPuro = getCurrentPuroVersion();
+    final currentPuro = await getCurrentPuroVersion();
     final currentVersion = Version.parse(currentPuro.version);
     print(
       'Current Puro version: $currentVersion - Standalone: ${currentPuro.standalone}',
@@ -42,18 +51,13 @@ Future<void> initializePuro(SdkInitializerContext context) async {
         puroRootDir = installPuro();
       } else {
         await puro(['upgrade-puro'], progress: Progress.print());
-        puroRootDir = puroPath.parent.parent;
+        puroRootDir = puroPath!.parent.parent;
       }
+      dcli.env['PURO_ROOT'] = puroRootDir.absolute.path;
     } else {
       print('Puro is up to date.');
-      puroRootDir = puroPath.parent.parent;
     }
-  } else {
-    // Install puro
-    puroRootDir = installPuro();
   }
-
-  dcli.env['PURO_ROOT'] = puroRootDir.absolute.path;
 
   // Setup puro environment
   await _setupFlutterEnvironment(context);
@@ -100,18 +104,20 @@ class PuroInstallationFailedException implements Exception {
   }
 }
 
-({bool standalone, String version}) getCurrentPuroVersion() {
+Future<({bool standalone, String version})> getCurrentPuroVersion() async {
   final puroPath = getPuroPath();
   if (puroPath == null) {
     throw PuroInstallationFailedException();
   }
-  final versionLine = dcli
-      .start(
-        'puro --version',
-        progress: Progress.capture(),
-        workingDirectory: puroPath.parent.parent.absolute.path,
-      )
-      .firstLine;
+  final progress = Progress.capture();
+  await puro(
+    ['--version'],
+    progress: progress,
+    workingDirectory: puroPath.parent.parent.absolute,
+  );
+  final versionLine = progress.lines.firstWhere(
+    (line) => line.contains('[i] Puro'),
+  );
 
   final regex = RegExp(r'\b\d+\.\d+\.\d+\b');
   final match = regex.firstMatch(versionLine ?? '');
@@ -123,6 +129,6 @@ class PuroInstallationFailedException implements Exception {
   if (version == null) {
     throw PuroInstallationFailedException();
   }
-  final standalone = versionLine?.contains('standalone') ?? false;
+  final standalone = versionLine.contains('standalone');
   return (standalone: standalone, version: version);
 }
