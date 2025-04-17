@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.1.1
+- Fix a Bug in Puro update check
+
 ## 1.1.0
 - Update to Sidekick 3.0.0-preview.5
 - Add Puro update check

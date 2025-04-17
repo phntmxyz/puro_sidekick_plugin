@@ -120,7 +120,7 @@ Future<({bool standalone, String version})> getCurrentPuroVersion() async {
   );
 
   final regex = RegExp(r'\b\d+\.\d+\.\d+\b');
-  final match = regex.firstMatch(versionLine ?? '');
+  final match = regex.firstMatch(versionLine);
 
   String? version;
   if (match != null) {
