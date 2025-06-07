@@ -30,16 +30,25 @@ const String _puroLsVersions = '''
 ''';
 
 void main() {
-  test('get flutter version for exact matching dart version', () {
+  test('get flutter version for exact matching dart version', () async {
     final parser = VersionParser(
       packagePath: Directory.current,
       puroLsVersionsProvider: () => _puroLsVersions,
     );
-    expect(parser.testGetBestFlutterVersion(dartConstraint: '3.4.1'), '3.22.1');
-    expect(parser.testGetBestFlutterVersion(dartConstraint: '3.4.0'), '3.22.0');
-    expect(parser.testGetBestFlutterVersion(dartConstraint: '3.2.6'), '3.16.9');
     expect(
-      parser.testGetBestFlutterVersion(dartConstraint: '2.18.6'),
+      await parser.testGetBestFlutterVersion(dartConstraint: '3.4.1'),
+      '3.22.1',
+    );
+    expect(
+      await parser.testGetBestFlutterVersion(dartConstraint: '3.4.0'),
+      '3.22.0',
+    );
+    expect(
+      await parser.testGetBestFlutterVersion(dartConstraint: '3.2.6'),
+      '3.16.9',
+    );
+    expect(
+      await parser.testGetBestFlutterVersion(dartConstraint: '2.18.6'),
       '3.3.10',
     );
 
@@ -49,12 +58,13 @@ void main() {
       useBeta: true,
     );
     expect(
-      betaParser.testGetBestFlutterVersion(dartConstraint: '3.4.0'),
+      await betaParser.testGetBestFlutterVersion(dartConstraint: '3.4.0'),
       '3.20.0-1.2.pre',
     );
   });
 
-  test('get min flutter version for closest matching flutter version', () {
+  test('get min flutter version for closest matching flutter version',
+      () async {
     final parser = VersionParser(
       packagePath: Directory.current,
       puroLsVersionsProvider: () => _puroLsVersions,
@@ -62,49 +72,50 @@ void main() {
 
     // 3.16.9 is exact match
     expect(
-      parser.testGetBestFlutterVersion(flutterConstraint: '3.16.9'),
+      await parser.testGetBestFlutterVersion(flutterConstraint: '3.16.9'),
       '3.16.9',
     );
 
     // ^3.2.0 which is min Flutter 3.3.10
     expect(
-      parser.testGetBestFlutterVersion(flutterConstraint: '^3.7.0'),
+      await parser.testGetBestFlutterVersion(flutterConstraint: '^3.7.0'),
       '3.7.12',
     );
 
     // >=3.0.0 <4.0.0 is min version 3.0.0 and max version <4 which is Flutter 3.3.10
     expect(
-      parser.testGetBestFlutterVersion(flutterConstraint: '>=3.0.0 <4.0.0'),
+      await parser.testGetBestFlutterVersion(
+          flutterConstraint: '>=3.0.0 <4.0.0'),
       '3.3.10',
     );
 
     // <4.0.0 is min Flutter 3.3.10
     expect(
-      parser.testGetBestFlutterVersion(flutterConstraint: '<4.0.0'),
+      await parser.testGetBestFlutterVersion(flutterConstraint: '<4.0.0'),
       '3.3.10',
     );
   });
 
-  test('get min flutter version for dart version constraint', () {
+  test('get min flutter version for dart version constraint', () async {
     final parser = VersionParser(
       packagePath: Directory.current,
       puroLsVersionsProvider: () => _puroLsVersions,
     );
     // ^3.0.0 is max minor version = 3.4.1 which is Flutter 3.10.6
     expect(
-      parser.testGetBestFlutterVersion(dartConstraint: '^3.0.0'),
+      await parser.testGetBestFlutterVersion(dartConstraint: '^3.0.0'),
       '3.10.6',
     );
 
     // >=3.0.0 <4.0.0 is max version <4 =  3.4.1 which is Flutter 3.10.6
     expect(
-      parser.testGetBestFlutterVersion(dartConstraint: '>=3.0.0 <4.0.0'),
+      await parser.testGetBestFlutterVersion(dartConstraint: '>=3.0.0 <4.0.0'),
       '3.10.6',
     );
 
     // <3.4.0 is closest to 3.3.4 which is Flutter 3.3.10
     expect(
-      parser.testGetBestFlutterVersion(dartConstraint: '<3.4.0'),
+      await parser.testGetBestFlutterVersion(dartConstraint: '<3.4.0'),
       '3.3.10',
     );
 
@@ -115,20 +126,21 @@ void main() {
     );
     // ^3.3.0 is max minor version = 3.4.0 which is Flutter 3.22.0-0.3.pre
     expect(
-      betaParser.testGetBestFlutterVersion(dartConstraint: '^3.3.0'),
+      await betaParser.testGetBestFlutterVersion(dartConstraint: '^3.3.0'),
       '3.17.0-0.0.pre',
     );
   });
 
-  test('return null when no matching version is available', () {
+  test('return null when no matching version is available', () async {
     final parser = VersionParser(
       packagePath: Directory.current,
       puroLsVersionsProvider: () => _puroLsVersions,
     );
-    expect(parser.testGetBestFlutterVersion(dartConstraint: '>=4.0.0'), null);
+    expect(await parser.testGetBestFlutterVersion(dartConstraint: '>=4.0.0'),
+        null);
   });
 
-  test('get min flutter version for sdk based pubspec', () {
+  test('get min flutter version for sdk based pubspec', () async {
     const pubspecYamlConstraint = '''
 name: puro_sidekick_plugin
 
@@ -143,10 +155,10 @@ environment:
     );
 
     // >=3.0.0 <4.0.0 which is min sdk 3.0.6 which is Flutter 3.10.6
-    expect(parser.getMaxFlutterSdkVersionFromPubspec(), '3.10.6');
+    expect(await parser.getMaxFlutterSdkVersionFromPubspec(), '3.10.6');
   });
 
-  test('get min flutter version for caret sdk based pubspec', () {
+  test('get min flutter version for caret sdk based pubspec', () async {
     const pubspecYamlCaretConstraint = '''
 name: puro_sidekick_plugin
 
@@ -161,10 +173,10 @@ environment:
     );
 
     // ^3.0.0 is min sdk 3.0.6 which is Flutter 3.10.6
-    expect(parser.getMaxFlutterSdkVersionFromPubspec(), '3.10.6');
+    expect(await parser.getMaxFlutterSdkVersionFromPubspec(), '3.10.6');
   });
 
-  test('get exact flutter version for flutter based pubspec', () {
+  test('get exact flutter version for flutter based pubspec', () async {
     const pubspecYamlFlutterConstraint = '''
 name: puro_sidekick_plugin
 
@@ -179,10 +191,10 @@ environment:
       puroLsVersionsProvider: () => _puroLsVersions,
     );
 
-    expect(parser.getMaxFlutterSdkVersionFromPubspec(), '3.16.9');
+    expect(await parser.getMaxFlutterSdkVersionFromPubspec(), '3.16.9');
   });
 
-  test('get max flutter version for flutter based pubspec', () {
+  test('get max flutter version for flutter based pubspec', () async {
     const pubspecYamlFlutterConstraint = '''
 name: puro_sidekick_plugin
 
@@ -197,7 +209,7 @@ environment:
       puroLsVersionsProvider: () => _puroLsVersions,
     );
 
-    expect(parser.getMaxFlutterSdkVersionFromPubspec(), '3.3.10');
+    expect(await parser.getMaxFlutterSdkVersionFromPubspec(), '3.3.10');
   });
 }
 
