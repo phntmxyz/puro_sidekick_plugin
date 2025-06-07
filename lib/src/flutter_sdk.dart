@@ -13,11 +13,11 @@ String flutterSdkSymlink() {
 
 /// Returns the Flutter SDK path from puro environment
 /// throws [PuroNotFoundException] if puro is not found
-String puroFlutterSdkPath(Directory packageDir) {
+Future<String> puroFlutterSdkPath(Directory packageDir) async {
   String? envPath;
   final pathMatcher = RegExp(r'.*executing: \[(.*)\].*');
   final progress = Progress.capture();
-  puro(
+  await puro(
     ['flutter', '-v', '--version'],
     progress: progress,
     workingDirectory: packageDir,

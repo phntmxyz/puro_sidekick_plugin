@@ -64,7 +64,7 @@ Future<void> initializePuro(SdkInitializerContext context) async {
 
   // Create symlink to puro flutter sdk
   final packageDir = context.packageDir?.root ?? SidekickContext.projectRoot;
-  final flutterPath = puroFlutterSdkPath(packageDir);
+  final flutterPath = await puroFlutterSdkPath(packageDir);
 
   final flutterBinPath = Directory(flutterPath).directory('bin');
 
@@ -76,7 +76,7 @@ Future<void> initializePuro(SdkInitializerContext context) async {
 Future<void> _setupFlutterEnvironment(SdkInitializerContext context) async {
   final packageDir = context.packageDir?.root ?? SidekickContext.projectRoot;
 
-  final sdkVersion = VersionParser(
+  final sdkVersion = await VersionParser(
     packagePath: packageDir,
     projectRoot: SidekickContext.projectRoot,
   ).getMaxFlutterSdkVersionFromPubspec();

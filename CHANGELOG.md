@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.1.2
+- Await all `puro` calls
+- Make `puroFlutterSdkPath` return a `Future`
+
 ## 1.1.1
 - Fix a Bug in Puro update check
 

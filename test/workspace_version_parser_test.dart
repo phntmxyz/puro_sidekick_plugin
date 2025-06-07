@@ -30,7 +30,8 @@ const String _puroLsVersions = '''
 ''';
 
 void main() {
-  test('get root flutter version when project resolution is workspace', () {
+  test('get root flutter version when project resolution is workspace',
+      () async {
     const rootPubspec = '''
 name: root_pubspec
 
@@ -56,10 +57,10 @@ resolution: workspace
       puroLsVersionsProvider: () => _puroLsVersions,
     );
 
-    expect(parser.getMaxFlutterSdkVersionFromPubspec(), '3.19.6');
+    expect(await parser.getMaxFlutterSdkVersionFromPubspec(), '3.19.6');
   });
 
-  test('get root flutter version when project resolution is local', () {
+  test('get root flutter version when project resolution is local', () async {
     const rootPubspec = '''
 name: root_pubspec
 
@@ -84,7 +85,7 @@ resolution: local
       puroLsVersionsProvider: () => _puroLsVersions,
     );
 
-    expect(parser.getMaxFlutterSdkVersionFromPubspec(), '3.16.9');
+    expect(await parser.getMaxFlutterSdkVersionFromPubspec(), '3.16.9');
   });
 }
 

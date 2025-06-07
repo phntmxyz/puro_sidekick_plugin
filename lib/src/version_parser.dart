@@ -27,7 +27,7 @@ class VersionParser {
   /// If the flutter version is not available, it reads the dart sdk version
   /// and returns the flutter version of the upper bound dart version constraint
   /// Returns null if the version is not found
-  String getMaxFlutterSdkVersionFromPubspec() {
+  Future<String> getMaxFlutterSdkVersionFromPubspec() async {
     try {
       YamlMap? pubspec = _readPubspecFile(packagePath);
       if (pubspec == null) {
@@ -60,7 +60,7 @@ class VersionParser {
       // Get dart sdk version if flutter version is not available
       final dartConstraint = environment?['sdk'] as String?;
 
-      final availableVersions = _parseAvailableVersions();
+      final availableVersions = await _parseAvailableVersions();
 
       if (flutterConstraint != null) {
         final flutterVersion = VersionConstraint.parse(flutterConstraint);
@@ -103,7 +103,7 @@ class VersionParser {
   /// Provides the available versions from puro ls-versions command
   /// If the `puroLsVersionsProvider` is provided, it uses that to get the versions
   /// Returns all stdout lines from the command as a list
-  List<String> _provideAvailableVersions() {
+  Future<List<String>> _provideAvailableVersions() async {
     final lines = <String>[];
 
     if (puroLsVersionsProvider != null) {
@@ -111,7 +111,7 @@ class VersionParser {
     } else {
       try {
         // List all available flutter and dart versions
-        puro(
+        await puro(
           ['ls-versions', '--full'],
           progress: Progress((line) {
             if (line.trim().isNotEmpty) lines.add(line);
@@ -147,7 +147,7 @@ class VersionParser {
 
   /// Parses the available versions from the `puro ls-versions` command
   /// Returns a map of dart version to flutter version
-  Map<Version, Version> _parseAvailableVersions() {
+  Future<Map<Version, Version>> _parseAvailableVersions() async {
     // Map off dart version to flutter version
     final versionMap = <Version, Version>{};
     final betaVersionMap = <Version, Version>{};
@@ -155,7 +155,7 @@ class VersionParser {
     bool isBetaRelease = false;
 
     // puro stdout lines
-    final lines = _provideAvailableVersions();
+    final lines = await _provideAvailableVersions();
 
     // Parse the version list
     for (final line in lines) {
@@ -197,12 +197,12 @@ class VersionParser {
     return sortedVersions;
   }
 
-  String? _getBestFlutterVersion(
+  Future<String?> _getBestFlutterVersion(
     Map<Version, Version> versions,
     String? dartConstraint,
     String? flutterConstraint,
-  ) {
-    final availableVersions = _parseAvailableVersions();
+  ) async {
+    final availableVersions = await _parseAvailableVersions();
 
     if (flutterConstraint != null) {
       final flutterVersion = VersionConstraint.parse(flutterConstraint);
@@ -223,11 +223,11 @@ class VersionParser {
   }
 
   /// Test method to get the best flutter version for the given dart and flutter constraints
-  String? testGetBestFlutterVersion({
+  Future<String?> testGetBestFlutterVersion({
     String? dartConstraint,
     String? flutterConstraint,
-  }) {
-    final availableVersions = _parseAvailableVersions();
+  }) async {
+    final availableVersions = await _parseAvailableVersions();
     return _getBestFlutterVersion(
       availableVersions,
       dartConstraint,
