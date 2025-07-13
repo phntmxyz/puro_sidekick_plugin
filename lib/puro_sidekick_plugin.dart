@@ -13,6 +13,8 @@ export 'package:puro_sidekick_plugin/src/flutter_sdk.dart'
     hide createSymlink, puroFlutterSdkPath;
 export 'package:puro_sidekick_plugin/src/puro.dart';
 
+bool _alreadyCheckedForUpdate = false;
+
 Future<void> initializePuro(SdkInitializerContext context) async {
   // Create folder for flutter sdk symlink
   final symlinkPath = flutterSdkSymlink();
@@ -35,7 +37,8 @@ Future<void> initializePuro(SdkInitializerContext context) async {
   dcli.env['PURO_ROOT'] = puroRootDir.absolute.path;
 
   // Check if puro is up to date
-  if (checkForUpdates) {
+  if (checkForUpdates && !_alreadyCheckedForUpdate) {
+    _alreadyCheckedForUpdate = true;
     print('Checking for updates...');
     final latestVersion = Version.parse(getLatestPuroVersion());
     print('Latest Puro version: $latestVersion');
