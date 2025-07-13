@@ -1,6 +1,6 @@
 name: puro_sidekick_plugin
 description: Sidekick plugin that uses the Flutter SDK managed by Puro in the repository and links it to the flutter and dart commands
-version: 1.1.2
+version: 1.2.0
 repository: https://github.com/phntmxyz/puro_sidekick_plugin
 issue_tracker: https://github.com/phntmxyz/puro_sidekick_plugin/issues
 topics:
