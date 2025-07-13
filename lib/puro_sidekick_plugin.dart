@@ -59,6 +59,9 @@ Future<void> initializePuro(SdkInitializerContext context) async {
     }
   }
 
+  // getting the puro flutter sdk path only work when no bin override is set
+  // https://github.com/pingbird/puro/blob/46d9753ffe8e60f0efa7256fad8e5efbf107e39a/puro/lib/src/config.dart#L147
+  dcli.env['PURO_FLUTTER_BIN'] = null;
   // Setup puro environment
   await _setupFlutterEnvironment(context);
 
