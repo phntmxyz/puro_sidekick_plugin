@@ -62,6 +62,15 @@ environment:
 
 You can add `resolution: workspace` to your package-level `pubspec.yaml` to always use the Flutter and Dart versions from the root `pubspec.yaml`.
 
+### Debugging
+
+Something seems fishy? 
+You can enable debug logging for the plugin by setting the `PURO_SIDEKICK_PLUGIN_VERBOSE` environment variable to `true`:
+
+```bash
+$ export PURO_SIDEKICK_PLUGIN_VERBOSE=true
+```
+
 ## License
 
 ```

@@ -155,7 +155,10 @@ environment:
     );
 
     // >=3.0.0 <4.0.0 which is min sdk 3.0.6 which is Flutter 3.10.6
-    expect(await parser.getMaxFlutterSdkVersionFromPubspec(), '3.10.6');
+    expect(
+      await parser.getMaxFlutterSdkVersionFromPubspec(),
+      FlutterSdkVersions.fromString('3.10.6', '3.0.6'),
+    );
   });
 
   test('get min flutter version for caret sdk based pubspec', () async {
@@ -173,7 +176,10 @@ environment:
     );
 
     // ^3.0.0 is min sdk 3.0.6 which is Flutter 3.10.6
-    expect(await parser.getMaxFlutterSdkVersionFromPubspec(), '3.10.6');
+    expect(
+      await parser.getMaxFlutterSdkVersionFromPubspec(),
+      FlutterSdkVersions.fromString('3.10.6', '3.0.6'),
+    );
   });
 
   test('get exact flutter version for flutter based pubspec', () async {
@@ -191,7 +197,10 @@ environment:
       puroLsVersionsProvider: () => _puroLsVersions,
     );
 
-    expect(await parser.getMaxFlutterSdkVersionFromPubspec(), '3.16.9');
+    expect(
+      await parser.getMaxFlutterSdkVersionFromPubspec(),
+      FlutterSdkVersions.fromString('3.16.9', '3.2.6'),
+    );
   });
 
   test('get max flutter version for flutter based pubspec', () async {
@@ -209,7 +218,10 @@ environment:
       puroLsVersionsProvider: () => _puroLsVersions,
     );
 
-    expect(await parser.getMaxFlutterSdkVersionFromPubspec(), '3.3.10');
+    expect(
+      await parser.getMaxFlutterSdkVersionFromPubspec(),
+      FlutterSdkVersions.fromString('3.3.10', '2.18.6'),
+    );
   });
 }
 

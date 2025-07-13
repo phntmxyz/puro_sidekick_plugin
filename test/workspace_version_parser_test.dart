@@ -57,7 +57,10 @@ resolution: workspace
       puroLsVersionsProvider: () => _puroLsVersions,
     );
 
-    expect(await parser.getMaxFlutterSdkVersionFromPubspec(), '3.19.6');
+    expect(
+      await parser.getMaxFlutterSdkVersionFromPubspec(),
+      FlutterSdkVersions.fromString('3.19.6', '3.3.4'),
+    );
   });
 
   test('get root flutter version when project resolution is local', () async {
@@ -85,7 +88,10 @@ resolution: local
       puroLsVersionsProvider: () => _puroLsVersions,
     );
 
-    expect(await parser.getMaxFlutterSdkVersionFromPubspec(), '3.16.9');
+    expect(
+      await parser.getMaxFlutterSdkVersionFromPubspec(),
+      FlutterSdkVersions.fromString('3.16.9', '3.2.6'),
+    );
   });
 }
 

@@ -27,7 +27,7 @@ class VersionParser {
   /// If the flutter version is not available, it reads the dart sdk version
   /// and returns the flutter version of the upper bound dart version constraint
   /// Returns null if the version is not found
-  Future<String> getMaxFlutterSdkVersionFromPubspec() async {
+  Future<FlutterSdkVersions> getMaxFlutterSdkVersionFromPubspec() async {
     try {
       YamlMap? pubspec = _readPubspecFile(packagePath);
       if (pubspec == null) {
@@ -60,22 +60,35 @@ class VersionParser {
       // Get dart sdk version if flutter version is not available
       final dartConstraint = environment?['sdk'] as String?;
 
+      /// Dart Version => Flutter Version
       final availableVersions = await _parseAvailableVersions();
 
       if (flutterConstraint != null) {
         final flutterVersion = VersionConstraint.parse(flutterConstraint);
-        print('Found flutter version constraint: $flutterVersion');
-        for (final version in availableVersions.values) {
-          if (flutterVersion.allows(version)) {
-            return version.toString();
+        printVerbose('Found flutter version constraint: $flutterVersion');
+        for (final entry in availableVersions.entries) {
+          final fVersion = entry.value;
+          final dVersion = entry.key;
+          if (flutterVersion.allows(fVersion)) {
+            // Due to sorting, picking the first returns the latest matching
+            return FlutterSdkVersions(
+              dartVersion: dVersion,
+              flutterVersion: fVersion,
+            );
           }
         }
       } else if (dartConstraint != null) {
         final dartVersion = VersionConstraint.parse(dartConstraint);
-        print('Found dart version constraint: $dartVersion');
-        for (final version in availableVersions.keys) {
-          if (dartVersion.allows(version)) {
-            return availableVersions[version].toString();
+        printVerbose('Found dart version constraint: $dartVersion');
+        for (final entry in availableVersions.entries) {
+          final fVersion = entry.value;
+          final dVersion = entry.key;
+          if (dartVersion.allows(dVersion)) {
+            // Due to sorting, picking the first returns the latest matching
+            return FlutterSdkVersions(
+              dartVersion: dVersion,
+              flutterVersion: fVersion,
+            );
           }
         }
       }
@@ -249,4 +262,37 @@ class VersionParserException implements Exception {
   String toString() {
     return 'Error parsing SDK versions: $msg ${innerException != null ? '\n$innerException' : ''}';
   }
+}
+
+class FlutterSdkVersions {
+  FlutterSdkVersions({
+    required this.dartVersion,
+    required this.flutterVersion,
+  });
+
+  factory FlutterSdkVersions.fromString(String flutter, String dart) {
+    return FlutterSdkVersions(
+      dartVersion: Version.parse(dart),
+      flutterVersion: Version.parse(flutter),
+    );
+  }
+
+  final Version dartVersion;
+  final Version flutterVersion;
+
+  @override
+  String toString() {
+    return 'FlutterSdkVersions(dartVersion: $dartVersion, flutterVersion: $flutterVersion)';
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is FlutterSdkVersions &&
+          runtimeType == other.runtimeType &&
+          dartVersion == other.dartVersion &&
+          flutterVersion == other.flutterVersion;
+
+  @override
+  int get hashCode => Object.hash(dartVersion, flutterVersion);
 }

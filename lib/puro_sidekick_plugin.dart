@@ -15,6 +15,13 @@ export 'package:puro_sidekick_plugin/src/puro.dart';
 
 bool _alreadyCheckedForUpdate = false;
 
+/// print for verbose messages
+void printVerbose(String message) {
+  if (dcli.env['PURO_SIDEKICK_PLUGIN_VERBOSE'] == 'true') {
+    dcli.printerr(message);
+  }
+}
+
 Future<void> initializePuro(SdkInitializerContext context) async {
   // Create folder for flutter sdk symlink
   final symlinkPath = flutterSdkSymlink();
@@ -25,7 +32,7 @@ Future<void> initializePuro(SdkInitializerContext context) async {
 
   // Check if puro is already installed
   if (puroPath != null && puroPath.existsSync()) {
-    print(
+    printVerbose(
       'Puro is already installed at ${puroPath.parent.parent.absolute.path}',
     );
     puroRootDir = puroPath.parent.parent;
@@ -39,13 +46,13 @@ Future<void> initializePuro(SdkInitializerContext context) async {
   // Check if puro is up to date
   if (checkForUpdates && !_alreadyCheckedForUpdate) {
     _alreadyCheckedForUpdate = true;
-    print('Checking for updates...');
+    printVerbose('Checking for updates...');
     final latestVersion = Version.parse(getLatestPuroVersion());
-    print('Latest Puro version: $latestVersion');
+    printVerbose('Latest Puro version: $latestVersion');
 
     final currentPuro = await getCurrentPuroVersion();
     final currentVersion = Version.parse(currentPuro.version);
-    print(
+    printVerbose(
       'Current Puro version: $currentVersion - Standalone: ${currentPuro.standalone}',
     );
     if (currentVersion < latestVersion) {
@@ -58,47 +65,64 @@ Future<void> initializePuro(SdkInitializerContext context) async {
       }
       dcli.env['PURO_ROOT'] = puroRootDir.absolute.path;
     } else {
-      print('Puro is up to date.');
+      printVerbose('Puro is up to date.');
     }
   }
 
   // getting the puro flutter sdk path only work when no bin override is set
   // https://github.com/pingbird/puro/blob/46d9753ffe8e60f0efa7256fad8e5efbf107e39a/puro/lib/src/config.dart#L147
   dcli.env['PURO_FLUTTER_BIN'] = null;
-  // Setup puro environment
-  await _setupFlutterEnvironment(context);
 
-  // Create symlink to puro flutter sdk
   final packageDir = context.packageDir?.root ?? SidekickContext.projectRoot;
-  final flutterPath = await puroFlutterSdkPath(packageDir);
-
-  final flutterBinPath = Directory(flutterPath).directory('bin');
-
-  dcli.env['PURO_FLUTTER_BIN'] = flutterBinPath.absolute.path;
-  print('Use Puro Flutter SDK: $flutterPath');
-  createSymlink(symlinkPath, flutterPath);
-}
-
-Future<void> _setupFlutterEnvironment(SdkInitializerContext context) async {
-  final packageDir = context.packageDir?.root ?? SidekickContext.projectRoot;
-
-  final sdkVersion = await VersionParser(
+  final versions = await VersionParser(
     packagePath: packageDir,
     projectRoot: SidekickContext.projectRoot,
   ).getMaxFlutterSdkVersionFromPubspec();
 
+  // Setup puro environment
+  await _createPuroEnvironment(packageDir, versions.flutterVersion);
+  await _binPuroToProject(packageDir, versions.flutterVersion);
+
+  // Create symlink to puro flutter sdk
+  final flutterPath = await puroFlutterSdkPath(packageDir);
+  final flutterBinPath = Directory(flutterPath).directory('bin');
+  printVerbose('Use Puro Flutter SDK: $flutterPath');
+
+  dcli.env['PURO_FLUTTER_BIN'] = flutterBinPath.absolute.path;
+  createSymlink(symlinkPath, flutterPath);
+
+  print(
+    'Using Flutter ${versions.flutterVersion} (Dart ${versions.dartVersion})',
+  );
+}
+
+Future<void> _createPuroEnvironment(
+  Directory packageDir,
+  Version flutterSdkVersion,
+) async {
   final progress = Progress.capture();
   await puro(['ls'], progress: progress);
   final currentEnvs = progress.lines.join('\n');
 
-  if (!currentEnvs.contains(sdkVersion)) {
-    print('Create new Puro environment: $sdkVersion');
-    await puro(['create', sdkVersion, sdkVersion], progress: Progress.print());
+  final versionString = flutterSdkVersion.toString();
+  if (!currentEnvs.contains(versionString)) {
+    printVerbose('Create new Puro environment: $flutterSdkVersion');
+    await puro(
+      ['create', versionString, versionString],
+      progress: Progress.print(),
+    );
   }
-  print('Use Puro environment: $sdkVersion');
+}
+
+Future<void> _binPuroToProject(
+  Directory packageDir,
+  Version flutterSdkVersion,
+) async {
+  final versionString = flutterSdkVersion.toString();
+  printVerbose('Use Puro environment: $versionString');
   await puro(
-    ['use', '--project', packageDir.absolute.path, sdkVersion],
-    progress: Progress.print(),
+    ['use', '--project', packageDir.absolute.path, versionString],
+    progress: Progress.printStdErr(),
   );
 }
 
