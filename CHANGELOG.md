@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.2.1
+- Check all published Flutter+Dart combinations when selecting a Flutter SDK (including beta)
+
 ## 1.2.0
 - Fix multiple `initializePuro` calls setting up *different* puro environments, actually using the correct environment and do not use the env from the previous `initializePuro` call
 - Reduce version print to a single line, enable debug logging with `export PURO_SIDEKICK_PLUGIN_VERBOSE=true`

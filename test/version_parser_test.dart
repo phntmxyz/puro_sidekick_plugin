@@ -58,8 +58,12 @@ void main() {
       useBeta: true,
     );
     expect(
+      await betaParser.testGetBestFlutterVersion(dartConstraint: '3.3.0'),
+      '3.19.0-0.4.pre', // only beta available
+    );
+    expect(
       await betaParser.testGetBestFlutterVersion(dartConstraint: '3.4.0'),
-      '3.20.0-1.2.pre',
+      '3.22.0', // stable wins
     );
   });
 
@@ -127,7 +131,7 @@ void main() {
     // ^3.3.0 is max minor version = 3.4.0 which is Flutter 3.22.0-0.3.pre
     expect(
       await betaParser.testGetBestFlutterVersion(dartConstraint: '^3.3.0'),
-      '3.17.0-0.0.pre',
+      '3.19.0-0.4.pre',
     );
   });
 

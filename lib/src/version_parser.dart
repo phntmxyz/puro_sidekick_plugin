@@ -67,28 +67,32 @@ class VersionParser {
         final flutterVersion = VersionConstraint.parse(flutterConstraint);
         printVerbose('Found flutter version constraint: $flutterVersion');
         for (final entry in availableVersions.entries) {
-          final fVersion = entry.value;
+          final fVersions = entry.value;
           final dVersion = entry.key;
-          if (flutterVersion.allows(fVersion)) {
-            // Due to sorting, picking the first returns the latest matching
-            return FlutterSdkVersions(
-              dartVersion: dVersion,
-              flutterVersion: fVersion,
-            );
+          for (final fVersion in fVersions) {
+            if (flutterVersion.allows(fVersion)) {
+              // Due to sorting, picking the first returns the latest matching
+              return FlutterSdkVersions(
+                dartVersion: dVersion,
+                flutterVersion: fVersion,
+              );
+            }
           }
         }
       } else if (dartConstraint != null) {
         final dartVersion = VersionConstraint.parse(dartConstraint);
         printVerbose('Found dart version constraint: $dartVersion');
         for (final entry in availableVersions.entries) {
-          final fVersion = entry.value;
+          final fVersions = entry.value;
           final dVersion = entry.key;
-          if (dartVersion.allows(dVersion)) {
-            // Due to sorting, picking the first returns the latest matching
-            return FlutterSdkVersions(
-              dartVersion: dVersion,
-              flutterVersion: fVersion,
-            );
+          for (final fVersion in fVersions) {
+            if (dartVersion.allows(dVersion)) {
+              // Due to sorting, picking the first returns the latest matching
+              return FlutterSdkVersions(
+                dartVersion: dVersion,
+                flutterVersion: fVersion,
+              );
+            }
           }
         }
       }
@@ -160,20 +164,16 @@ class VersionParser {
 
   /// Parses the available versions from the `puro ls-versions` command
   /// Returns a map of dart version to flutter version
-  Future<Map<Version, Version>> _parseAvailableVersions() async {
-    // Map off dart version to flutter version
-    final versionMap = <Version, Version>{};
-    final betaVersionMap = <Version, Version>{};
-
-    bool isBetaRelease = false;
+  Future<Map<Version, List<Version>>> _parseAvailableVersions() async {
+    final versionMap = <Version, List<Version>>{};
 
     // puro stdout lines
     final lines = await _provideAvailableVersions();
 
     // Parse the version list
     for (final line in lines) {
-      if (line.contains('beta')) {
-        isBetaRelease = true;
+      if (line.contains('beta') && useBeta) {
+        continue; // Skip beta versions if not requested
       }
 
       final parts = line.split('|');
@@ -184,51 +184,47 @@ class VersionParser {
           final listedDartVersion =
               Version.parse(parts[3].replaceAll('Dart', '').trim());
 
-          // Only add the latest version for each dart version
-          if (isBetaRelease) {
-            betaVersionMap[listedDartVersion] = flutterVersion;
-          } else {
-            versionMap[listedDartVersion] = flutterVersion;
-          }
-        } catch (_) {}
+          final List<Version> existing = versionMap[listedDartVersion] ?? [];
+          existing.add(flutterVersion);
+          versionMap[listedDartVersion] = existing;
+        } catch (_) {
+          // ignore
+        }
       }
     }
 
-    final SplayTreeMap<Version, Version> sortedVersions;
-    if (useBeta) {
-      sortedVersions = SplayTreeMap<Version, Version>.from(
-        betaVersionMap,
-        (key1, key2) => betaVersionMap[key1]!.compareTo(betaVersionMap[key2]!),
-      );
-    } else {
-      sortedVersions = SplayTreeMap<Version, Version>.from(
-        versionMap,
-        (key1, key2) => versionMap[key1]!.compareTo(versionMap[key2]!),
-      );
-    }
+    final SplayTreeMap<Version, List<Version>> sortedVersions =
+        SplayTreeMap<Version, List<Version>>.from(
+      versionMap,
+      (key1, key2) => key1.compareTo(key2),
+    );
 
     return sortedVersions;
   }
 
   Future<String?> _getBestFlutterVersion(
-    Map<Version, Version> versions,
+    Map<Version, List<Version>> versions,
     String? dartConstraint,
     String? flutterConstraint,
   ) async {
+    // key Dart version, value List<Flutter version>
     final availableVersions = await _parseAvailableVersions();
 
     if (flutterConstraint != null) {
       final flutterVersion = VersionConstraint.parse(flutterConstraint);
-      for (final version in availableVersions.values) {
-        if (flutterVersion.allows(version)) {
-          return version.toString();
+      for (final List<Version> versions in availableVersions.values) {
+        for (final Version version in versions) {
+          if (flutterVersion.allows(version)) {
+            return version.toString();
+          }
         }
       }
     } else if (dartConstraint != null) {
       final dartVersion = VersionConstraint.parse(dartConstraint);
       for (final version in versions.keys) {
         if (dartVersion.allows(version)) {
-          return versions[version].toString();
+          final List<Version> flutterVersions = versions[version]!;
+          return flutterVersions.first.toString();
         }
       }
     }

@@ -77,6 +77,7 @@ Future<void> initializePuro(SdkInitializerContext context) async {
   final versions = await VersionParser(
     packagePath: packageDir,
     projectRoot: SidekickContext.projectRoot,
+    useBeta: true,
   ).getMaxFlutterSdkVersionFromPubspec();
 
   // Setup puro environment
