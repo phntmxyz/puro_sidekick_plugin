@@ -54,8 +54,22 @@ class VersionParser {
       // Check for environment
       final environment = pubspec['environment'] as YamlMap?;
 
+      // Get preferFlutter version if available (highest priority override)
+      // Must be an exact version, not a range
+      final preferFlutter = environment?['preferFlutter'] as String?;
+      if (preferFlutter != null) {
+        _validateExactVersion(preferFlutter, 'preferFlutter');
+      }
+
       // Get flutter version if available
       final flutterConstraint = environment?['flutter'] as String?;
+
+      // Get preferDart version if available (overrides sdk)
+      // Must be an exact version, not a range
+      final preferDart = environment?['preferDart'] as String?;
+      if (preferDart != null) {
+        _validateExactVersion(preferDart, 'preferDart');
+      }
 
       // Get dart sdk version if flutter version is not available
       final dartConstraint = environment?['sdk'] as String?;
@@ -63,9 +77,23 @@ class VersionParser {
       /// Dart Version => Flutter Version
       final availableVersions = await _parseAvailableVersions();
 
-      if (flutterConstraint != null) {
-        final flutterVersion = VersionConstraint.parse(flutterConstraint);
-        printVerbose('Found flutter version constraint: $flutterVersion');
+      // preferFlutter takes priority over flutter and sdk constraints
+      // preferDart takes priority over sdk constraint
+      // This is useful for packages that support multiple versions but want
+      // to use a specific version for linting and formatting as default
+      final effectiveFlutterConstraint = preferFlutter ?? flutterConstraint;
+      final effectiveDartConstraint = preferDart ?? dartConstraint;
+
+      if (effectiveFlutterConstraint != null) {
+        final flutterVersion =
+            VersionConstraint.parse(effectiveFlutterConstraint);
+        if (preferFlutter != null) {
+          printVerbose(
+            'Found preferFlutter version: $flutterVersion (overrides flutter/sdk)',
+          );
+        } else {
+          printVerbose('Found flutter version constraint: $flutterVersion');
+        }
         for (final entry in availableVersions.entries) {
           final fVersions = entry.value;
           final dVersion = entry.key;
@@ -79,9 +107,15 @@ class VersionParser {
             }
           }
         }
-      } else if (dartConstraint != null) {
-        final dartVersion = VersionConstraint.parse(dartConstraint);
-        printVerbose('Found dart version constraint: $dartVersion');
+      } else if (effectiveDartConstraint != null) {
+        final dartVersion = VersionConstraint.parse(effectiveDartConstraint);
+        if (preferDart != null) {
+          printVerbose(
+            'Found preferDart version: $dartVersion (overrides sdk)',
+          );
+        } else {
+          printVerbose('Found dart version constraint: $dartVersion');
+        }
         for (final entry in availableVersions.entries) {
           final fVersions = entry.value;
           final dVersion = entry.key;
@@ -139,6 +173,18 @@ class VersionParser {
       }
     }
     return lines;
+  }
+
+  /// Validates that the given version string is an exact version, not a range.
+  /// Throws [VersionParserException] if the version is a range.
+  void _validateExactVersion(String version, String fieldName) {
+    final constraint = VersionConstraint.parse(version);
+    if (constraint is! Version) {
+      throw VersionParserException(
+        msg:
+            '$fieldName must be an exact version (e.g., "3.22.1"), not a range. Got: "$version"',
+      );
+    }
   }
 
   YamlMap? _readPubspecFile(Directory packagePath) {

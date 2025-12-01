@@ -227,6 +227,250 @@ environment:
       FlutterSdkVersions.fromString('3.3.10', '2.18.6'),
     );
   });
+
+  test('preferFlutter overrides both flutter and sdk constraints', () async {
+    const pubspecYaml = '''
+name: puro_sidekick_plugin
+
+environment:
+  preferFlutter: '3.22.1'
+  flutter: '>=3.0.0 <4.0.0'
+  sdk: '>=3.0.0 <4.0.0'
+''';
+
+    final tempDir = _createPubspec(pubspecYaml);
+    final parser = VersionParser(
+      packagePath: tempDir,
+      puroLsVersionsProvider: () => _puroLsVersions,
+    );
+
+    // preferFlutter: 3.22.1 should be used instead of flutter or sdk constraints
+    expect(
+      await parser.getMaxFlutterSdkVersionFromPubspec(),
+      FlutterSdkVersions.fromString('3.22.1', '3.4.1'),
+    );
+  });
+
+  test('preferFlutter overrides sdk constraint when flutter is not present',
+      () async {
+    const pubspecYaml = '''
+name: puro_sidekick_plugin
+
+environment:
+  preferFlutter: '3.19.4'
+  sdk: '>=3.0.0 <4.0.0'
+''';
+
+    final tempDir = _createPubspec(pubspecYaml);
+    final parser = VersionParser(
+      packagePath: tempDir,
+      puroLsVersionsProvider: () => _puroLsVersions,
+    );
+
+    // preferFlutter: 3.19.4 should be used instead of sdk constraint
+    expect(
+      await parser.getMaxFlutterSdkVersionFromPubspec(),
+      FlutterSdkVersions.fromString('3.19.4', '3.3.2'),
+    );
+  });
+
+  test('flutter constraint is used when preferFlutter is not present',
+      () async {
+    const pubspecYaml = '''
+name: puro_sidekick_plugin
+
+environment:
+  flutter: '3.22.1'
+  sdk: '>=3.0.0 <4.0.0'
+''';
+
+    final tempDir = _createPubspec(pubspecYaml);
+    final parser = VersionParser(
+      packagePath: tempDir,
+      puroLsVersionsProvider: () => _puroLsVersions,
+    );
+
+    // Should still work when preferFlutter is not present
+    expect(
+      await parser.getMaxFlutterSdkVersionFromPubspec(),
+      FlutterSdkVersions.fromString('3.22.1', '3.4.1'),
+    );
+  });
+
+  test('preferDart overrides sdk constraint', () async {
+    const pubspecYaml = '''
+name: puro_sidekick_plugin
+
+environment:
+  preferDart: '3.4.1'
+  sdk: '>=3.0.0 <4.0.0'
+''';
+
+    final tempDir = _createPubspec(pubspecYaml);
+    final parser = VersionParser(
+      packagePath: tempDir,
+      puroLsVersionsProvider: () => _puroLsVersions,
+    );
+
+    // preferDart: 3.4.1 should be used instead of sdk constraint
+    expect(
+      await parser.getMaxFlutterSdkVersionFromPubspec(),
+      FlutterSdkVersions.fromString('3.22.1', '3.4.1'),
+    );
+  });
+
+  test('preferFlutter takes priority over preferDart', () async {
+    const pubspecYaml = '''
+name: puro_sidekick_plugin
+
+environment:
+  preferFlutter: '3.22.1'
+  preferDart: '3.2.6'
+  flutter: '>=3.0.0 <4.0.0'
+  sdk: '>=3.0.0 <4.0.0'
+''';
+
+    final tempDir = _createPubspec(pubspecYaml);
+    final parser = VersionParser(
+      packagePath: tempDir,
+      puroLsVersionsProvider: () => _puroLsVersions,
+    );
+
+    // preferFlutter should take priority over preferDart
+    expect(
+      await parser.getMaxFlutterSdkVersionFromPubspec(),
+      FlutterSdkVersions.fromString('3.22.1', '3.4.1'),
+    );
+  });
+
+  test('sdk constraint is used when preferDart is not present', () async {
+    const pubspecYaml = '''
+name: puro_sidekick_plugin
+
+environment:
+  sdk: '3.4.1'
+''';
+
+    final tempDir = _createPubspec(pubspecYaml);
+    final parser = VersionParser(
+      packagePath: tempDir,
+      puroLsVersionsProvider: () => _puroLsVersions,
+    );
+
+    // Should still work when preferDart is not present
+    expect(
+      await parser.getMaxFlutterSdkVersionFromPubspec(),
+      FlutterSdkVersions.fromString('3.22.1', '3.4.1'),
+    );
+  });
+
+  test('preferFlutter throws when given a range constraint', () async {
+    const pubspecYaml = '''
+name: puro_sidekick_plugin
+
+environment:
+  preferFlutter: '>=3.19.0 <4.0.0'
+  sdk: '>=3.0.0 <4.0.0'
+''';
+
+    final tempDir = _createPubspec(pubspecYaml);
+    final parser = VersionParser(
+      packagePath: tempDir,
+      puroLsVersionsProvider: () => _puroLsVersions,
+    );
+
+    expect(
+      () => parser.getMaxFlutterSdkVersionFromPubspec(),
+      throwsA(
+        isA<VersionParserException>().having(
+          (e) => e.msg,
+          'msg',
+          contains('preferFlutter must be an exact version'),
+        ),
+      ),
+    );
+  });
+
+  test('preferFlutter throws when given a caret constraint', () async {
+    const pubspecYaml = '''
+name: puro_sidekick_plugin
+
+environment:
+  preferFlutter: '^3.19.0'
+  sdk: '>=3.0.0 <4.0.0'
+''';
+
+    final tempDir = _createPubspec(pubspecYaml);
+    final parser = VersionParser(
+      packagePath: tempDir,
+      puroLsVersionsProvider: () => _puroLsVersions,
+    );
+
+    expect(
+      () => parser.getMaxFlutterSdkVersionFromPubspec(),
+      throwsA(
+        isA<VersionParserException>().having(
+          (e) => e.msg,
+          'msg',
+          contains('preferFlutter must be an exact version'),
+        ),
+      ),
+    );
+  });
+
+  test('preferDart throws when given a range constraint', () async {
+    const pubspecYaml = '''
+name: puro_sidekick_plugin
+
+environment:
+  preferDart: '>=3.3.0 <4.0.0'
+  sdk: '>=3.0.0 <4.0.0'
+''';
+
+    final tempDir = _createPubspec(pubspecYaml);
+    final parser = VersionParser(
+      packagePath: tempDir,
+      puroLsVersionsProvider: () => _puroLsVersions,
+    );
+
+    expect(
+      () => parser.getMaxFlutterSdkVersionFromPubspec(),
+      throwsA(
+        isA<VersionParserException>().having(
+          (e) => e.msg,
+          'msg',
+          contains('preferDart must be an exact version'),
+        ),
+      ),
+    );
+  });
+
+  test('preferDart throws when given a caret constraint', () async {
+    const pubspecYaml = '''
+name: puro_sidekick_plugin
+
+environment:
+  preferDart: '^3.3.0'
+  sdk: '>=3.0.0 <4.0.0'
+''';
+
+    final tempDir = _createPubspec(pubspecYaml);
+    final parser = VersionParser(
+      packagePath: tempDir,
+      puroLsVersionsProvider: () => _puroLsVersions,
+    );
+
+    expect(
+      () => parser.getMaxFlutterSdkVersionFromPubspec(),
+      throwsA(
+        isA<VersionParserException>().having(
+          (e) => e.msg,
+          'msg',
+          contains('preferDart must be an exact version'),
+        ),
+      ),
+    );
+  });
 }
 
 Directory _createPubspec(String pubspecContent) {
