@@ -54,21 +54,25 @@ class VersionParser {
       // Check for environment
       final environment = pubspec['environment'] as YamlMap?;
 
-      // Get preferFlutter version if available (highest priority override)
+      // Check for sidekick.puro configuration (preferred SDK versions)
+      final sidekick = pubspec['sidekick'] as YamlMap?;
+      final puroConfig = sidekick?['puro'] as YamlMap?;
+
+      // Get useFlutterSdk version if available (highest priority override)
       // Must be an exact version, not a range
-      final preferFlutter = environment?['preferFlutter'] as String?;
-      if (preferFlutter != null) {
-        _validateExactVersion(preferFlutter, 'preferFlutter');
+      final useFlutterSdk = puroConfig?['useFlutterSdk'] as String?;
+      if (useFlutterSdk != null) {
+        _validateExactVersion(useFlutterSdk, 'useFlutterSdk');
       }
 
       // Get flutter version if available
       final flutterConstraint = environment?['flutter'] as String?;
 
-      // Get preferDart version if available (overrides sdk)
+      // Get useDartSdk version if available (overrides sdk)
       // Must be an exact version, not a range
-      final preferDart = environment?['preferDart'] as String?;
-      if (preferDart != null) {
-        _validateExactVersion(preferDart, 'preferDart');
+      final useDartSdk = puroConfig?['useDartSdk'] as String?;
+      if (useDartSdk != null) {
+        _validateExactVersion(useDartSdk, 'useDartSdk');
       }
 
       // Get dart sdk version if flutter version is not available
@@ -77,19 +81,19 @@ class VersionParser {
       /// Dart Version => Flutter Version
       final availableVersions = await _parseAvailableVersions();
 
-      // preferFlutter takes priority over flutter and sdk constraints
-      // preferDart takes priority over sdk constraint
+      // useFlutterSdk takes priority over flutter and sdk constraints
+      // useDartSdk takes priority over sdk constraint
       // This is useful for packages that support multiple versions but want
       // to use a specific version for linting and formatting as default
-      final effectiveFlutterConstraint = preferFlutter ?? flutterConstraint;
-      final effectiveDartConstraint = preferDart ?? dartConstraint;
+      final effectiveFlutterConstraint = useFlutterSdk ?? flutterConstraint;
+      final effectiveDartConstraint = useDartSdk ?? dartConstraint;
 
       if (effectiveFlutterConstraint != null) {
         final flutterVersion =
             VersionConstraint.parse(effectiveFlutterConstraint);
-        if (preferFlutter != null) {
+        if (useFlutterSdk != null) {
           printVerbose(
-            'Found preferFlutter version: $flutterVersion (overrides flutter/sdk)',
+            'Found useFlutterSdk version: $flutterVersion (overrides flutter/sdk)',
           );
         } else {
           printVerbose('Found flutter version constraint: $flutterVersion');
@@ -109,9 +113,9 @@ class VersionParser {
         }
       } else if (effectiveDartConstraint != null) {
         final dartVersion = VersionConstraint.parse(effectiveDartConstraint);
-        if (preferDart != null) {
+        if (useDartSdk != null) {
           printVerbose(
-            'Found preferDart version: $dartVersion (overrides sdk)',
+            'Found useDartSdk version: $dartVersion (overrides sdk)',
           );
         } else {
           printVerbose('Found dart version constraint: $dartVersion');

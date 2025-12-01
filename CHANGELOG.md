@@ -1,14 +1,23 @@
 # Changelog
 
-## 1.3.0
-- Add `preferFlutter` and `preferDart` environment fields to pin exact versions for tooling (linting/formatting) while maintaining broad version support in pub packages ([#6](https://github.com/phntmxyz/puro_sidekick_plugin/pull/6))
+## 1.3.1
+- Move puro configuration from `environment` to `sidekick.puro` section in pubspec.yaml
+  - `environment.preferFlutter` is now `sidekick.puro.useFlutterSdk`
+  - `environment.preferDart` is now `sidekick.puro.useDartSdk`
+  - This fixes compatibility issues with pub.dev validation (environment only allows standard keys)
   ```yaml
   environment:
-    preferFlutter: '3.22.1'    # Used by puro
     flutter: '>=3.0.0 <4.0.0'  # Broad support for users
     sdk: '>=3.0.0 <4.0.0'
+  
+  sidekick:
+    puro:
+      useFlutterSdk: '3.22.1'  # Used by puro_sidekick_plugin
+      useDartSdk: '3.4.1'      
   ```
-- These fields must be exact versions (not ranges) and take priority over `flutter`/`sdk` constraints
+
+## 1.3.0 (retracted)
+- Retracted: `environment` section in pubspec.yaml doesn't allow custom keys like `environment.preferFlutter`
 
 ## 1.2.1
 - Check all published Flutter+Dart combinations when selecting a Flutter SDK (including beta)
