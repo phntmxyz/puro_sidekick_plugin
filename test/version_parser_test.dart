@@ -228,12 +228,15 @@ environment:
     );
   });
 
-  test('preferFlutter overrides both flutter and sdk constraints', () async {
+  test('useFlutterSdk overrides both flutter and sdk constraints', () async {
     const pubspecYaml = '''
 name: puro_sidekick_plugin
 
+sidekick:
+  puro:
+    useFlutterSdk: '3.22.1'
+
 environment:
-  preferFlutter: '3.22.1'
   flutter: '>=3.0.0 <4.0.0'
   sdk: '>=3.0.0 <4.0.0'
 ''';
@@ -244,20 +247,23 @@ environment:
       puroLsVersionsProvider: () => _puroLsVersions,
     );
 
-    // preferFlutter: 3.22.1 should be used instead of flutter or sdk constraints
+    // useFlutterSdk: 3.22.1 should be used instead of flutter or sdk constraints
     expect(
       await parser.getMaxFlutterSdkVersionFromPubspec(),
       FlutterSdkVersions.fromString('3.22.1', '3.4.1'),
     );
   });
 
-  test('preferFlutter overrides sdk constraint when flutter is not present',
+  test('useFlutterSdk overrides sdk constraint when flutter is not present',
       () async {
     const pubspecYaml = '''
 name: puro_sidekick_plugin
 
+sidekick:
+  puro:
+    useFlutterSdk: '3.19.4'
+
 environment:
-  preferFlutter: '3.19.4'
   sdk: '>=3.0.0 <4.0.0'
 ''';
 
@@ -267,14 +273,14 @@ environment:
       puroLsVersionsProvider: () => _puroLsVersions,
     );
 
-    // preferFlutter: 3.19.4 should be used instead of sdk constraint
+    // useFlutterSdk: 3.19.4 should be used instead of sdk constraint
     expect(
       await parser.getMaxFlutterSdkVersionFromPubspec(),
       FlutterSdkVersions.fromString('3.19.4', '3.3.2'),
     );
   });
 
-  test('flutter constraint is used when preferFlutter is not present',
+  test('flutter constraint is used when useFlutterSdk is not present',
       () async {
     const pubspecYaml = '''
 name: puro_sidekick_plugin
@@ -290,19 +296,22 @@ environment:
       puroLsVersionsProvider: () => _puroLsVersions,
     );
 
-    // Should still work when preferFlutter is not present
+    // Should still work when useFlutterSdk is not present
     expect(
       await parser.getMaxFlutterSdkVersionFromPubspec(),
       FlutterSdkVersions.fromString('3.22.1', '3.4.1'),
     );
   });
 
-  test('preferDart overrides sdk constraint', () async {
+  test('useDartSdk overrides sdk constraint', () async {
     const pubspecYaml = '''
 name: puro_sidekick_plugin
 
+sidekick:
+  puro:
+    useDartSdk: '3.4.1'
+
 environment:
-  preferDart: '3.4.1'
   sdk: '>=3.0.0 <4.0.0'
 ''';
 
@@ -312,20 +321,23 @@ environment:
       puroLsVersionsProvider: () => _puroLsVersions,
     );
 
-    // preferDart: 3.4.1 should be used instead of sdk constraint
+    // useDartSdk: 3.4.1 should be used instead of sdk constraint
     expect(
       await parser.getMaxFlutterSdkVersionFromPubspec(),
       FlutterSdkVersions.fromString('3.22.1', '3.4.1'),
     );
   });
 
-  test('preferFlutter takes priority over preferDart', () async {
+  test('useFlutterSdk takes priority over useDartSdk', () async {
     const pubspecYaml = '''
 name: puro_sidekick_plugin
 
+sidekick:
+  puro:
+    useFlutterSdk: '3.22.1'
+    useDartSdk: '3.2.6'
+
 environment:
-  preferFlutter: '3.22.1'
-  preferDart: '3.2.6'
   flutter: '>=3.0.0 <4.0.0'
   sdk: '>=3.0.0 <4.0.0'
 ''';
@@ -336,14 +348,14 @@ environment:
       puroLsVersionsProvider: () => _puroLsVersions,
     );
 
-    // preferFlutter should take priority over preferDart
+    // useFlutterSdk should take priority over useDartSdk
     expect(
       await parser.getMaxFlutterSdkVersionFromPubspec(),
       FlutterSdkVersions.fromString('3.22.1', '3.4.1'),
     );
   });
 
-  test('sdk constraint is used when preferDart is not present', () async {
+  test('sdk constraint is used when useDartSdk is not present', () async {
     const pubspecYaml = '''
 name: puro_sidekick_plugin
 
@@ -357,19 +369,22 @@ environment:
       puroLsVersionsProvider: () => _puroLsVersions,
     );
 
-    // Should still work when preferDart is not present
+    // Should still work when useDartSdk is not present
     expect(
       await parser.getMaxFlutterSdkVersionFromPubspec(),
       FlutterSdkVersions.fromString('3.22.1', '3.4.1'),
     );
   });
 
-  test('preferFlutter throws when given a range constraint', () async {
+  test('useFlutterSdk throws when given a range constraint', () async {
     const pubspecYaml = '''
 name: puro_sidekick_plugin
 
+sidekick:
+  puro:
+    useFlutterSdk: '>=3.19.0 <4.0.0'
+
 environment:
-  preferFlutter: '>=3.19.0 <4.0.0'
   sdk: '>=3.0.0 <4.0.0'
 ''';
 
@@ -385,18 +400,21 @@ environment:
         isA<VersionParserException>().having(
           (e) => e.msg,
           'msg',
-          contains('preferFlutter must be an exact version'),
+          contains('useFlutterSdk must be an exact version'),
         ),
       ),
     );
   });
 
-  test('preferFlutter throws when given a caret constraint', () async {
+  test('useFlutterSdk throws when given a caret constraint', () async {
     const pubspecYaml = '''
 name: puro_sidekick_plugin
 
+sidekick:
+  puro:
+    useFlutterSdk: '^3.19.0'
+
 environment:
-  preferFlutter: '^3.19.0'
   sdk: '>=3.0.0 <4.0.0'
 ''';
 
@@ -412,18 +430,21 @@ environment:
         isA<VersionParserException>().having(
           (e) => e.msg,
           'msg',
-          contains('preferFlutter must be an exact version'),
+          contains('useFlutterSdk must be an exact version'),
         ),
       ),
     );
   });
 
-  test('preferDart throws when given a range constraint', () async {
+  test('useDartSdk throws when given a range constraint', () async {
     const pubspecYaml = '''
 name: puro_sidekick_plugin
 
+sidekick:
+  puro:
+    useDartSdk: '>=3.3.0 <4.0.0'
+
 environment:
-  preferDart: '>=3.3.0 <4.0.0'
   sdk: '>=3.0.0 <4.0.0'
 ''';
 
@@ -439,18 +460,21 @@ environment:
         isA<VersionParserException>().having(
           (e) => e.msg,
           'msg',
-          contains('preferDart must be an exact version'),
+          contains('useDartSdk must be an exact version'),
         ),
       ),
     );
   });
 
-  test('preferDart throws when given a caret constraint', () async {
+  test('useDartSdk throws when given a caret constraint', () async {
     const pubspecYaml = '''
 name: puro_sidekick_plugin
 
+sidekick:
+  puro:
+    useDartSdk: '^3.3.0'
+
 environment:
-  preferDart: '^3.3.0'
   sdk: '>=3.0.0 <4.0.0'
 ''';
 
@@ -466,7 +490,7 @@ environment:
         isA<VersionParserException>().having(
           (e) => e.msg,
           'msg',
-          contains('preferDart must be an exact version'),
+          contains('useDartSdk must be an exact version'),
         ),
       ),
     );

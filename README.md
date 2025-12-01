@@ -60,39 +60,45 @@ environment:
 
 ### Preferred Version for Pub Packages
 
-When developing pub packages that support a wide range of Flutter/Dart versions, you often want to use a specific version for linting and formatting while maintaining broad compatibility. Use `preferFlutter` or `preferDart` to pin an exact version for tooling without affecting your package's version constraints:
+When developing pub packages that support a wide range of Flutter/Dart versions, you often want to use a specific version for linting and formatting while maintaining broad compatibility. Use `sidekick.puro.useFlutterSdk` or `sidekick.puro.useDartSdk` to pin an exact version for tooling without affecting your package's version constraints:
 
 ```yaml
 name: my_pub_package
 
+sidekick:
+  puro:
+    useFlutterSdk: '3.22.1'  # Used by puro for linting/formatting
+
 environment:
-  preferFlutter: '3.22.1'    # Used by puro for linting/formatting
   flutter: '>=3.0.0 <4.0.0'  # Broad support range for package users
   sdk: '>=3.0.0 <4.0.0'
 ```
 
 ```bash
-<cli> flutter --version // Outputs Flutter version 3.22.1 (from preferFlutter)
+<cli> flutter --version // Outputs Flutter version 3.22.1 (from useFlutterSdk)
 <cli> dart format .     // Uses Dart 3.4.1 (bundled with Flutter 3.22.1)
 ```
 
-You can also use `preferDart` if you only need to pin the Dart version:
+You can also use `useDartSdk` if you only need to pin the Dart version:
 
 ```yaml
 name: my_dart_package
 
+sidekick:
+  puro:
+    useDartSdk: '3.4.1'      # Used by puro for linting/formatting
+
 environment:
-  preferDart: '3.4.1'        # Used by puro for linting/formatting
   sdk: '>=3.0.0 <4.0.0'      # Broad support range for package users
 ```
 
 **Priority order:**
-1. `preferFlutter` (highest - overrides everything)
+1. `sidekick.puro.useFlutterSdk` (highest - overrides everything)
 2. `flutter`
-3. `preferDart`
+3. `sidekick.puro.useDartSdk`
 4. `sdk` (lowest)
 
-**Note:** `preferFlutter` and `preferDart` must be exact versions (e.g., `'3.22.1'`), not ranges. Using a range like `'^3.22.0'` will result in an error.
+**Note:** `useFlutterSdk` and `useDartSdk` must be exact versions (e.g., `'3.22.1'`), not ranges. Using a range like `'^3.22.0'` will result in an error.
 
 ### Workspace
 
