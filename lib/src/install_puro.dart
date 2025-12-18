@@ -92,28 +92,45 @@ Directory installPuroStandalone(String version, dcli.Progress? progress) {
   return downloadPath.parent;
 }
 
-String getLatestPuroVersion() {
+/// Fetches the latest Puro version from GitHub releases.
+///
+/// [githubReleasesProvider] can be overridden for testing.
+String getLatestPuroVersion({
+  String Function()? githubReleasesProvider,
+}) {
   try {
-    final output = dcli.startFromArgs(
-      'curl',
-      ['https://api.github.com/repos/pingbird/puro/releases?per_page=1&page=1'],
-      progress: Progress.capture(captureStderr: false),
-    );
-    if (output.exitCode != 0) {
-      print('Failed to get the latest Puro version.');
+    final resultJson = githubReleasesProvider?.call() ?? _fetchLatestPuroReleaseJson();
+    if (resultJson == null) {
       return puroFallbackVersion;
     }
-    final resultJson = output.lines.join('\n');
     final result = jsonDecode(resultJson);
     if (result is! List || result.isEmpty) {
       print('Unexpected response from GitHub API: $resultJson');
       return puroFallbackVersion;
     }
-    return (result[0] as Map<String, dynamic>)['tag_name'] as String;
+    final tagName = (result[0] as Map<String, dynamic>)['tag_name'];
+    if (tagName is! String) {
+      print('Missing or invalid tag_name in GitHub API response');
+      return puroFallbackVersion;
+    }
+    return tagName;
   } catch (e) {
     print('Failed to get the latest Puro version: $e');
     return puroFallbackVersion;
   }
+}
+
+String? _fetchLatestPuroReleaseJson() {
+  final output = dcli.startFromArgs(
+    'curl',
+    ['https://api.github.com/repos/pingbird/puro/releases?per_page=1&page=1'],
+    progress: Progress.capture(captureStderr: false),
+  );
+  if (output.exitCode != 0) {
+    print('Failed to get the latest Puro version.');
+    return null;
+  }
+  return output.lines.join('\n');
 }
 
 int installPuroStandaloneMacOs(
