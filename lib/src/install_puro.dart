@@ -148,8 +148,9 @@ String getLatestPuroVersion({
     cacheFile.writeAsStringSync(tagName);
 
     return tagName;
-  } catch (e) {
+  } catch (e, stackTrace) {
     print('Failed to get the latest Puro version: $e');
+    print(stackTrace);
     return puroFallbackVersion;
   }
 }

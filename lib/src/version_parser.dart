@@ -159,9 +159,9 @@ class VersionParser {
         msg: 'Error parsing pubspec.yaml',
         innerException: e,
       );
-    } catch (e) {
+    } catch (e, stackTrace) {
       throw VersionParserException(
-        msg: 'Unexpected error: $e',
+        msg: 'Unexpected error: $e\n$stackTrace',
       );
     }
   }
@@ -189,14 +189,14 @@ class VersionParser {
         }
       }
 
+      final progress = Progress.capture(captureStderr: true);
       try {
         // List all available flutter and dart versions
         await puro(
           ['ls-versions', '--full'],
-          progress: Progress((line) {
-            if (line.trim().isNotEmpty) lines.add(line);
-          }),
+          progress: progress,
         );
+        lines.addAll(progress.lines.where((l) => l.trim().isNotEmpty));
 
         // Cache the result (delete first to reset last modified time)
         if (cacheFile.existsSync()) {
@@ -204,8 +204,12 @@ class VersionParser {
         }
         cacheFile.parent.createSync(recursive: true);
         cacheFile.writeAsStringSync(lines.join('\n'));
-      } catch (e) {
-        print('Error getting flutter versions: $e');
+      } catch (e, stackTrace) {
+        print('puro ls-versions failed: $e');
+        print(stackTrace);
+        if (progress.lines.isNotEmpty) {
+          print('output:\n${progress.lines.join('\n')}');
+        }
       }
     }
     return lines;
