@@ -94,18 +94,22 @@ Directory installPuroStandalone(String version, dcli.Progress? progress) {
 
 String getLatestPuroVersion() {
   try {
-    const command =
-        'curl https://api.github.com/repos/pingbird/puro/releases?per_page=1&page=1';
-    final output =
-        dcli.start(command, progress: Progress.capture(captureStderr: false));
+    final output = dcli.startFromArgs(
+      'curl',
+      ['https://api.github.com/repos/pingbird/puro/releases?per_page=1&page=1'],
+      progress: Progress.capture(captureStderr: false),
+    );
     if (output.exitCode != 0) {
       print('Failed to get the latest Puro version.');
       return puroFallbackVersion;
     }
     final resultJson = output.lines.join('\n');
     final result = jsonDecode(resultJson);
-    return ((result as List<dynamic>)[0] as Map<String, dynamic>)['tag_name']
-        as String;
+    if (result is! List || result.isEmpty) {
+      print('Unexpected response from GitHub API: $resultJson');
+      return puroFallbackVersion;
+    }
+    return (result[0] as Map<String, dynamic>)['tag_name'] as String;
   } catch (e) {
     print('Failed to get the latest Puro version: $e');
     return puroFallbackVersion;
