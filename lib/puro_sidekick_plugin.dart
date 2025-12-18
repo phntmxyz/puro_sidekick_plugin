@@ -101,11 +101,20 @@ Future<void> _createPuroEnvironment(
   Directory packageDir,
   Version flutterSdkVersion,
 ) async {
-  final progress = Progress.capture();
-  await puro(['ls'], progress: progress);
-  final currentEnvs = progress.lines.join('\n');
+  final progress = Progress.capture(captureStderr: true);
+  // nothrow: true because puro ls may fail if no environments exist yet
+  final result = await puro(['ls'], progress: progress, nothrow: true);
 
   final versionString = flutterSdkVersion.toString();
+  final currentEnvs = progress.lines.join('\n');
+
+  if (result.exitCode != 0) {
+    print('puro ls failed with exit code ${result.exitCode}');
+    if (progress.lines.isNotEmpty) {
+      print('output:\n${progress.lines.join('\n')}');
+    }
+  }
+
   if (!currentEnvs.contains(versionString)) {
     printVerbose('Create new Puro environment: $flutterSdkVersion');
     await puro(
