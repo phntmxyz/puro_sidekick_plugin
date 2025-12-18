@@ -1,9 +1,20 @@
 import 'dart:collection';
+import 'dart:io' as io;
 
 import 'package:pub_semver/pub_semver.dart';
 import 'package:puro_sidekick_plugin/puro_sidekick_plugin.dart';
 import 'package:sidekick_core/sidekick_core.dart' hide Version;
 import 'package:yaml/yaml.dart';
+
+/// Default cache TTL of 24 hours
+const _cacheTtl = Duration(hours: 24);
+
+/// Checks if a cache file is still valid (exists and not expired).
+bool _isCacheValid(io.File cacheFile, {Duration ttl = _cacheTtl}) {
+  if (!cacheFile.existsSync()) return false;
+  final lastModified = cacheFile.lastModifiedSync();
+  return DateTime.now().difference(lastModified) < ttl;
+}
 
 /// `VersionParser` is a class that helps in parsing Flutter and Dart versions.
 ///
@@ -157,6 +168,7 @@ class VersionParser {
 
   /// Provides the available versions from puro ls-versions command
   /// If the `puroLsVersionsProvider` is provided, it uses that to get the versions
+  /// The result is cached in the build folder for 24 hours.
   /// Returns all stdout lines from the command as a list
   Future<List<String>> _provideAvailableVersions() async {
     final lines = <String>[];
@@ -164,6 +176,19 @@ class VersionParser {
     if (puroLsVersionsProvider != null) {
       lines.addAll(puroLsVersionsProvider!().split('\n'));
     } else {
+      // Check cache first
+      final cacheFile = io.File(
+        '${SidekickContext.sidekickPackage.buildDir.path}/puro_ls_versions.txt',
+      );
+
+      if (_isCacheValid(cacheFile)) {
+        final cached = cacheFile.readAsStringSync();
+        if (cached.isNotEmpty) {
+          lines.addAll(cached.split('\n').where((l) => l.trim().isNotEmpty));
+          return lines;
+        }
+      }
+
       try {
         // List all available flutter and dart versions
         await puro(
@@ -172,6 +197,13 @@ class VersionParser {
             if (line.trim().isNotEmpty) lines.add(line);
           }),
         );
+
+        // Cache the result (delete first to reset last modified time)
+        if (cacheFile.existsSync()) {
+          cacheFile.deleteSync();
+        }
+        cacheFile.parent.createSync(recursive: true);
+        cacheFile.writeAsStringSync(lines.join('\n'));
       } catch (e) {
         print('Error getting flutter versions: $e');
       }
