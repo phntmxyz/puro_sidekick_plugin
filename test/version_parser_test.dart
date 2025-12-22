@@ -379,7 +379,7 @@ environment:
     );
   });
 
-  test('useFlutterSdk throws when given a range constraint', () async {
+  test('useFlutterSdk throws when given a range constraint', () {
     const pubspecYaml = '''
 name: puro_sidekick_plugin
 
@@ -409,7 +409,7 @@ environment:
     );
   });
 
-  test('useFlutterSdk throws when given a caret constraint', () async {
+  test('useFlutterSdk throws when given a caret constraint', () {
     const pubspecYaml = '''
 name: puro_sidekick_plugin
 
@@ -439,7 +439,7 @@ environment:
     );
   });
 
-  test('useDartSdk throws when given a range constraint', () async {
+  test('useDartSdk throws when given a range constraint', () {
     const pubspecYaml = '''
 name: puro_sidekick_plugin
 
@@ -469,7 +469,7 @@ environment:
     );
   });
 
-  test('useDartSdk throws when given a caret constraint', () async {
+  test('useDartSdk throws when given a caret constraint', () {
     const pubspecYaml = '''
 name: puro_sidekick_plugin
 
