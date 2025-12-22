@@ -83,6 +83,7 @@ Future<void> initializePuro(SdkInitializerContext context) async {
   dcli.env['PURO_FLUTTER_BIN'] = null;
 
   final packageDir = context.packageDir?.root ?? SidekickContext.projectRoot;
+  final package = DartPackage.fromDirectory(packageDir);
   final versions = await VersionParser(
     packagePath: packageDir,
     projectRoot: SidekickContext.projectRoot,
@@ -101,9 +102,16 @@ Future<void> initializePuro(SdkInitializerContext context) async {
   dcli.env['PURO_FLUTTER_BIN'] = flutterBinPath.absolute.path;
   createSymlink(symlinkPath, flutterPath);
 
-  print(
-    'Using Flutter ${versions.flutterVersion} (Dart ${versions.dartVersion})',
-  );
+  final isFlutterPackage = package?.isFlutterPackage ?? false;
+  if (isFlutterPackage) {
+    print(
+      'Using Flutter ${versions.flutterVersion} (Dart ${versions.dartVersion})',
+    );
+  } else {
+    print(
+      'Using Dart ${versions.dartVersion} (via Flutter ${versions.flutterVersion})',
+    );
+  }
 }
 
 Future<void> _createPuroEnvironment(

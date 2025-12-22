@@ -247,5 +247,67 @@ void main() {
       expect(version2, '1.1.0');
       expect(callCount, 1); // Still 1, provider wasn't called
     });
+
+    test('empty cache file triggers new fetch', () {
+      var callCount = 0;
+      String provider() {
+        callCount++;
+        return '[{"tag_name": "1.5.0"}]';
+      }
+
+      // Create empty cache file
+      cacheFile.createSync(recursive: true);
+      cacheFile.writeAsStringSync('');
+
+      final version = getLatestPuroVersion(
+        cacheFile: cacheFile,
+        githubReleasesProvider: provider,
+      );
+      expect(version, '1.5.0');
+      expect(callCount, 1); // Provider was called because cache was empty
+    });
+
+    test('cache file with only whitespace triggers new fetch', () {
+      var callCount = 0;
+      String provider() {
+        callCount++;
+        return '[{"tag_name": "1.5.0"}]';
+      }
+
+      // Create cache file with only whitespace
+      cacheFile.createSync(recursive: true);
+      cacheFile.writeAsStringSync('   \n\t  ');
+
+      final version = getLatestPuroVersion(
+        cacheFile: cacheFile,
+        githubReleasesProvider: provider,
+      );
+      expect(version, '1.5.0');
+      // Provider was called because cache was effectively empty
+      expect(callCount, 1);
+    });
+
+    test('cache file with invalid content is used as-is', () {
+      // Note: The cache file stores plain version strings, not JSON.
+      // If garbage is in the cache, it will be returned as-is until expired.
+      // This tests the current behavior - invalid cache content is trusted.
+      var callCount = 0;
+      String provider() {
+        callCount++;
+        return '[{"tag_name": "1.5.0"}]';
+      }
+
+      // Create cache file with garbage content
+      cacheFile.createSync(recursive: true);
+      cacheFile.writeAsStringSync('not-a-valid-version');
+
+      final version = getLatestPuroVersion(
+        cacheFile: cacheFile,
+        githubReleasesProvider: provider,
+      );
+      // Current behavior: returns the garbage content without validation
+      expect(version, 'not-a-valid-version');
+      expect(callCount, 0); // Provider was NOT called - cache was used
+    });
   });
 }

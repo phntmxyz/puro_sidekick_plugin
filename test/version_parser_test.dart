@@ -89,7 +89,8 @@ void main() {
     // >=3.0.0 <4.0.0 is min version 3.0.0 and max version <4 which is Flutter 3.3.10
     expect(
       await parser.testGetBestFlutterVersion(
-          flutterConstraint: '>=3.0.0 <4.0.0'),
+        flutterConstraint: '>=3.0.0 <4.0.0',
+      ),
       '3.3.10',
     );
 
@@ -140,8 +141,10 @@ void main() {
       packagePath: Directory.current,
       puroLsVersionsProvider: () => _puroLsVersions,
     );
-    expect(await parser.testGetBestFlutterVersion(dartConstraint: '>=4.0.0'),
-        null);
+    expect(
+      await parser.testGetBestFlutterVersion(dartConstraint: '>=4.0.0'),
+      null,
+    );
   });
 
   test('get min flutter version for sdk based pubspec', () async {
