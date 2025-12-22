@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.3.2
+- Cache GitHub API responses for puro version checks (24h TTL) to avoid rate limiting
+- Bump `puro` fallback version to `1.5.0`
+- Print "Using Dart X.Y.Z (via Flutter A.B.C)" for pure Dart packages instead of "Using Flutter..."
+
 ## 1.3.1
 - Move puro configuration from `environment` to `sidekick.puro` section in pubspec.yaml
   - `environment.preferFlutter` is now `sidekick.puro.useFlutterSdk`
