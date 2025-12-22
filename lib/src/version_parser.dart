@@ -189,7 +189,7 @@ class VersionParser {
         }
       }
 
-      final progress = Progress.capture(captureStderr: true);
+      final progress = Progress.capture();
       try {
         // List all available flutter and dart versions
         await puro(

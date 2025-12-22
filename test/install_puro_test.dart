@@ -169,7 +169,7 @@ void main() {
       var callCount = 0;
       String provider() {
         callCount++;
-        return '[{"tag_name": "1.${callCount}.0"}]';
+        return '[{"tag_name": "1.$callCount.0"}]';
       }
 
       // First call
@@ -196,7 +196,7 @@ void main() {
       var callCount = 0;
       String provider() {
         callCount++;
-        return '[{"tag_name": "1.${callCount}.0"}]';
+        return '[{"tag_name": "1.$callCount.0"}]';
       }
 
       // First call - creates cache
@@ -224,7 +224,7 @@ void main() {
       var callCount = 0;
       String provider() {
         callCount++;
-        return '[{"tag_name": "1.${callCount}.0"}]';
+        return '[{"tag_name": "1.$callCount.0"}]';
       }
 
       // First call - creates cache
