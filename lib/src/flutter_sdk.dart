@@ -16,12 +16,21 @@ String flutterSdkSymlink() {
 Future<String> puroFlutterSdkPath(Directory packageDir) async {
   String? envPath;
   final pathMatcher = RegExp(r'.*executing: \[(.*)\].*');
-  final progress = Progress.capture();
-  await puro(
-    ['flutter', '-v', '--version'],
-    progress: progress,
-    workingDirectory: packageDir,
-  );
+  final progress = Progress.capture(captureStderr: true);
+  try {
+    await puro(
+      ['flutter', '-v', '--version'],
+      progress: progress,
+      workingDirectory: packageDir,
+    );
+  } catch (e, stackTrace) {
+    print('puro flutter --version failed: $e');
+    print(stackTrace);
+    if (progress.lines.isNotEmpty) {
+      print('output:\n${progress.lines.join('\n')}');
+    }
+    throw PuroNotFoundException();
+  }
   final currentEnvs = progress.lines.join('\n');
   final match = pathMatcher.firstMatch(currentEnvs);
   if (match != null) {

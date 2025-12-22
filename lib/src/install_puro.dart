@@ -4,7 +4,7 @@ import 'package:dcli/dcli.dart' as dcli;
 import 'package:puro_sidekick_plugin/puro_sidekick_plugin.dart';
 import 'package:sidekick_core/sidekick_core.dart';
 
-const puroFallbackVersion = '1.4.10';
+const puroFallbackVersion = '1.5.0';
 
 /// Executes Flutter CLI via puro
 ///
@@ -92,24 +92,80 @@ Directory installPuroStandalone(String version, dcli.Progress? progress) {
   return downloadPath.parent;
 }
 
-String getLatestPuroVersion() {
+/// Default cache TTL of 24 hours
+const _cacheTtl = Duration(hours: 24);
+
+/// Checks if a cache file is still valid (exists and not expired).
+bool _isCacheValid(File cacheFile, {Duration ttl = _cacheTtl}) {
+  if (!cacheFile.existsSync()) return false;
+  final lastModified = cacheFile.lastModifiedSync();
+  return DateTime.now().difference(lastModified) < ttl;
+}
+
+/// Fetches the latest Puro version from GitHub releases.
+///
+/// The result is cached in the build folder for 24 hours.
+/// [githubReleasesProvider] can be overridden for testing.
+/// [cacheFile] can be overridden for testing.
+String getLatestPuroVersion({
+  String Function()? githubReleasesProvider,
+  File? cacheFile,
+}) {
+  cacheFile ??= File(
+    '${SidekickContext.sidekickPackage.buildDir.path}/puro_latest_version.txt',
+  );
+
+  // Return cached version if available and not expired
+  if (_isCacheValid(cacheFile)) {
+    final cached = cacheFile.readAsStringSync().trim();
+    if (cached.isNotEmpty) {
+      return cached;
+    }
+  }
+
   try {
-    const command =
-        'curl https://api.github.com/repos/pingbird/puro/releases?per_page=1&page=1';
-    final output =
-        dcli.start(command, progress: Progress.capture(captureStderr: false));
-    if (output.exitCode != 0) {
-      print('Failed to get the latest Puro version.');
+    final resultJson =
+        githubReleasesProvider?.call() ?? _fetchLatestPuroReleaseJson();
+    if (resultJson == null) {
       return puroFallbackVersion;
     }
-    final resultJson = output.lines.join('\n');
     final result = jsonDecode(resultJson);
-    return ((result as List<dynamic>)[0] as Map<String, dynamic>)['tag_name']
-        as String;
-  } catch (e) {
+    if (result is! List || result.isEmpty) {
+      print('Unexpected response from GitHub API: $resultJson');
+      return puroFallbackVersion;
+    }
+    final tagName = (result[0] as Map<String, dynamic>)['tag_name'];
+    if (tagName is! String) {
+      print('Missing or invalid tag_name in GitHub API response');
+      return puroFallbackVersion;
+    }
+
+    // Cache the version (delete first to reset last modified time)
+    if (cacheFile.existsSync()) {
+      cacheFile.deleteSync();
+    }
+    cacheFile.parent.createSync(recursive: true);
+    cacheFile.writeAsStringSync(tagName);
+
+    return tagName;
+  } catch (e, stackTrace) {
     print('Failed to get the latest Puro version: $e');
+    print(stackTrace);
     return puroFallbackVersion;
   }
+}
+
+String? _fetchLatestPuroReleaseJson() {
+  final output = dcli.startFromArgs(
+    'curl',
+    ['https://api.github.com/repos/pingbird/puro/releases?per_page=1&page=1'],
+    progress: Progress.capture(captureStderr: false),
+  );
+  if (output.exitCode != 0) {
+    print('Failed to get the latest Puro version.');
+    return null;
+  }
+  return output.lines.join('\n');
 }
 
 int installPuroStandaloneMacOs(

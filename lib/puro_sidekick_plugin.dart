@@ -60,7 +60,16 @@ Future<void> initializePuro(SdkInitializerContext context) async {
       if (currentPuro.standalone) {
         puroRootDir = installPuro();
       } else {
-        await puro(['upgrade-puro'], progress: Progress.print());
+        final progress = Progress.capture(captureStderr: true);
+        try {
+          await puro(['upgrade-puro'], progress: progress);
+        } catch (e, stackTrace) {
+          print('puro upgrade-puro failed: $e');
+          print(stackTrace);
+          if (progress.lines.isNotEmpty) {
+            print('output:\n${progress.lines.join('\n')}');
+          }
+        }
         puroRootDir = puroPath!.parent.parent;
       }
       dcli.env['PURO_ROOT'] = puroRootDir.absolute.path;
@@ -74,6 +83,7 @@ Future<void> initializePuro(SdkInitializerContext context) async {
   dcli.env['PURO_FLUTTER_BIN'] = null;
 
   final packageDir = context.packageDir?.root ?? SidekickContext.projectRoot;
+  final package = DartPackage.fromDirectory(packageDir);
   final versions = await VersionParser(
     packagePath: packageDir,
     projectRoot: SidekickContext.projectRoot,
@@ -92,26 +102,54 @@ Future<void> initializePuro(SdkInitializerContext context) async {
   dcli.env['PURO_FLUTTER_BIN'] = flutterBinPath.absolute.path;
   createSymlink(symlinkPath, flutterPath);
 
-  print(
-    'Using Flutter ${versions.flutterVersion} (Dart ${versions.dartVersion})',
-  );
+  final isFlutterPackage = package?.isFlutterPackage ?? false;
+  if (isFlutterPackage) {
+    print(
+      'Using Flutter ${versions.flutterVersion} (Dart ${versions.dartVersion})',
+    );
+  } else {
+    print(
+      'Using Dart ${versions.dartVersion} (via Flutter ${versions.flutterVersion})',
+    );
+  }
 }
 
 Future<void> _createPuroEnvironment(
   Directory packageDir,
   Version flutterSdkVersion,
 ) async {
-  final progress = Progress.capture();
-  await puro(['ls'], progress: progress);
-  final currentEnvs = progress.lines.join('\n');
-
   final versionString = flutterSdkVersion.toString();
+  String currentEnvs = '';
+
+  // puro ls may fail if no environments exist yet
+  final lsProgress = Progress.capture(captureStderr: true);
+  try {
+    await puro(['ls'], progress: lsProgress);
+    currentEnvs = lsProgress.lines.join('\n');
+  } catch (e, stackTrace) {
+    print('puro ls failed: $e');
+    print(stackTrace);
+    if (lsProgress.lines.isNotEmpty) {
+      print('output:\n${lsProgress.lines.join('\n')}');
+    }
+  }
+
   if (!currentEnvs.contains(versionString)) {
     printVerbose('Create new Puro environment: $flutterSdkVersion');
-    await puro(
-      ['create', versionString, versionString],
-      progress: Progress.print(),
-    );
+    final createProgress = Progress.capture(captureStderr: true);
+    try {
+      await puro(
+        ['create', versionString, versionString],
+        progress: createProgress,
+      );
+    } catch (e, stackTrace) {
+      print('puro create failed: $e');
+      print(stackTrace);
+      if (createProgress.lines.isNotEmpty) {
+        print('output:\n${createProgress.lines.join('\n')}');
+      }
+      rethrow;
+    }
   }
 }
 
@@ -121,10 +159,20 @@ Future<void> _binPuroToProject(
 ) async {
   final versionString = flutterSdkVersion.toString();
   printVerbose('Use Puro environment: $versionString');
-  await puro(
-    ['use', '--project', packageDir.absolute.path, versionString],
-    progress: Progress.printStdErr(),
-  );
+  final progress = Progress.capture(captureStderr: true);
+  try {
+    await puro(
+      ['use', '--project', packageDir.absolute.path, versionString],
+      progress: progress,
+    );
+  } catch (e, stackTrace) {
+    print('puro use failed: $e');
+    print(stackTrace);
+    if (progress.lines.isNotEmpty) {
+      print('output:\n${progress.lines.join('\n')}');
+    }
+    rethrow;
+  }
 }
 
 /// Thrown when puro could not be installed
@@ -138,16 +186,26 @@ class PuroInstallationFailedException implements Exception {
 Future<({bool standalone, String version})> getCurrentPuroVersion() async {
   final puroPath = getPuroPath();
   if (puroPath == null) {
-    throw PuroInstallationFailedException();
+    throw PuroNotFoundException();
   }
-  final progress = Progress.capture();
-  await puro(
-    ['--version'],
-    progress: progress,
-    workingDirectory: puroPath.parent.parent.absolute,
-  );
+  final progress = Progress.capture(captureStderr: true);
+  try {
+    await puro(
+      ['--version'],
+      progress: progress,
+      workingDirectory: puroPath.parent.parent.absolute,
+    );
+  } catch (e, stackTrace) {
+    print('puro --version failed: $e');
+    print(stackTrace);
+    if (progress.lines.isNotEmpty) {
+      print('output:\n${progress.lines.join('\n')}');
+    }
+    rethrow;
+  }
   final versionLine = progress.lines.firstWhere(
     (line) => line.contains('[i] Puro'),
+    orElse: () => '',
   );
 
   final regex = RegExp(r'\b\d+\.\d+\.\d+\b');
@@ -158,7 +216,10 @@ Future<({bool standalone, String version})> getCurrentPuroVersion() async {
     version = match.group(0);
   }
   if (version == null) {
-    throw PuroInstallationFailedException();
+    final output = progress.lines.join('\n');
+    throw Exception(
+      'Could not parse puro version from output:\n$output',
+    );
   }
   final standalone = versionLine.contains('standalone');
   return (standalone: standalone, version: version);
