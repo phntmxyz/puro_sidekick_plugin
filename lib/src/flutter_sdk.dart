@@ -16,7 +16,7 @@ String flutterSdkSymlink() {
 Future<String> puroFlutterSdkPath(Directory packageDir) async {
   String? envPath;
   final pathMatcher = RegExp(r'.*executing: \[(.*)\].*');
-  final progress = Progress.capture(captureStderr: true);
+  final progress = Progress.capture();
   try {
     await puro(
       ['flutter', '-v', '--version'],

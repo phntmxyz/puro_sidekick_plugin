@@ -1,5 +1,5 @@
 /// A Sidekick plugin that connects puro to the sidekick flutter command
-library puro_sidekick_plugin;
+library;
 
 import 'package:dcli/dcli.dart' as dcli;
 import 'package:puro_sidekick_plugin/puro_sidekick_plugin.dart';
@@ -60,7 +60,7 @@ Future<void> initializePuro(SdkInitializerContext context) async {
       if (currentPuro.standalone) {
         puroRootDir = installPuro();
       } else {
-        final progress = Progress.capture(captureStderr: true);
+        final progress = Progress.capture();
         try {
           await puro(['upgrade-puro'], progress: progress);
         } catch (e, stackTrace) {
@@ -122,7 +122,7 @@ Future<void> _createPuroEnvironment(
   String currentEnvs = '';
 
   // puro ls may fail if no environments exist yet
-  final lsProgress = Progress.capture(captureStderr: true);
+  final lsProgress = Progress.capture();
   try {
     await puro(['ls'], progress: lsProgress);
     currentEnvs = lsProgress.lines.join('\n');
@@ -136,7 +136,7 @@ Future<void> _createPuroEnvironment(
 
   if (!currentEnvs.contains(versionString)) {
     printVerbose('Create new Puro environment: $flutterSdkVersion');
-    final createProgress = Progress.capture(captureStderr: true);
+    final createProgress = Progress.capture();
     try {
       await puro(
         ['create', versionString, versionString],
@@ -159,7 +159,7 @@ Future<void> _binPuroToProject(
 ) async {
   final versionString = flutterSdkVersion.toString();
   printVerbose('Use Puro environment: $versionString');
-  final progress = Progress.capture(captureStderr: true);
+  final progress = Progress.capture();
   try {
     await puro(
       ['use', '--project', packageDir.absolute.path, versionString],
@@ -188,7 +188,7 @@ Future<({bool standalone, String version})> getCurrentPuroVersion() async {
   if (puroPath == null) {
     throw PuroNotFoundException();
   }
-  final progress = Progress.capture(captureStderr: true);
+  final progress = Progress.capture();
   try {
     await puro(
       ['--version'],
