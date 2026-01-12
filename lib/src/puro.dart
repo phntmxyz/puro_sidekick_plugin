@@ -76,6 +76,31 @@ Directory getPuroStandaloneBinPath({bool createIfNotExists = false}) {
   return path;
 }
 
+/// Parses environment names from `puro ls` output.
+///
+/// The output format is:
+/// ```txt
+///     ~ stable    (stable / 3.38.5 / f6ff1529fd)
+///       beta      (beta / 3.40.0-0.2.pre / ebde138e38)
+///     * 3.27.4    (stable / 3.27.4 / d8a9f9a52e)
+/// ```
+///
+/// Returns a set of environment names like {'stable', 'beta', '3.27.4'}
+Set<String> parsePuroEnvironments(String output) {
+  final envNames = <String>{};
+  // Match lines with optional prefix (spaces, ~, *) followed by environment name and details in parentheses
+  final envPattern = RegExp(r'^\s*[~*]?\s*(\S+)\s+\(', multiLine: true);
+
+  for (final match in envPattern.allMatches(output)) {
+    final envName = match.group(1);
+    if (envName != null) {
+      envNames.add(envName);
+    }
+  }
+
+  return envNames;
+}
+
 /// Thrown when puro is not found
 class PuroNotFoundException implements Exception {
   @override

@@ -5,6 +5,7 @@ import 'package:dcli/dcli.dart' as dcli;
 import 'package:puro_sidekick_plugin/puro_sidekick_plugin.dart';
 import 'package:puro_sidekick_plugin/src/flutter_sdk.dart';
 import 'package:puro_sidekick_plugin/src/install_puro.dart';
+import 'package:puro_sidekick_plugin/src/puro.dart';
 import 'package:puro_sidekick_plugin/src/version_parser.dart';
 import 'package:sidekick_core/sidekick_core.dart';
 
@@ -91,11 +92,16 @@ Future<void> initializePuro(SdkInitializerContext context) async {
   ).getMaxFlutterSdkVersionFromPubspec();
 
   // Setup puro environment
-  await _createPuroEnvironment(packageDir, versions.flutterVersion);
+  final versionString = versions.flutterVersion.toString();
+  final existingEnvs = await _getPuroEnvs();
+  String? cachedFlutterPath;
+  if (!existingEnvs.contains(versionString)) {
+    cachedFlutterPath = await _createPuroEnv(versions.flutterVersion);
+  }
   await _bindPuroToProject(packageDir, versions.flutterVersion);
 
   // Create symlink to puro flutter sdk
-  final flutterPath = await puroFlutterSdkPath(packageDir);
+  final flutterPath = cachedFlutterPath ?? await puroFlutterSdkPath(packageDir);
   final flutterBinPath = Directory(flutterPath).directory('bin');
   printVerbose('Use Puro Flutter SDK: $flutterPath');
 
@@ -114,42 +120,59 @@ Future<void> initializePuro(SdkInitializerContext context) async {
   }
 }
 
-Future<void> _createPuroEnvironment(
-  Directory packageDir,
-  Version flutterSdkVersion,
-) async {
-  final versionString = flutterSdkVersion.toString();
-  String currentEnvs = '';
-
-  // puro ls may fail if no environments exist yet
+/// Gets the list of existing Puro environments.
+/// Returns an empty set if puro ls fails.
+Future<Set<String>> _getPuroEnvs() async {
   final lsProgress = Progress.capture();
   try {
     await puro(['ls'], progress: lsProgress);
-    currentEnvs = lsProgress.lines.join('\n');
+    final output = lsProgress.lines.join('\n');
+    return parsePuroEnvironments(output);
   } catch (e, stackTrace) {
     print('puro ls failed: $e');
     print(stackTrace);
     if (lsProgress.lines.isNotEmpty) {
       print('output:\n${lsProgress.lines.join('\n')}');
     }
+    return {};
   }
+}
 
-  if (!currentEnvs.contains(versionString)) {
-    printVerbose('Create new Puro environment: $flutterSdkVersion');
-    final createProgress = Progress.capture();
-    try {
-      await puro(
-        ['create', versionString, versionString],
-        progress: createProgress,
+/// Creates a new Puro environment and returns the Flutter SDK path.
+/// Returns null if the path could not be extracted from the output.
+Future<String?> _createPuroEnv(Version flutterSdkVersion) async {
+  final versionString = flutterSdkVersion.toString();
+  printVerbose('Create new Puro environment: $flutterSdkVersion');
+
+  final createProgress = Progress.capture();
+  try {
+    await puro(
+      ['create', versionString, versionString],
+      progress: createProgress,
+    );
+
+    // Parse the Flutter SDK path from the output
+    // Example: "Created new environment at `/Users/pascalwelsch/.puro/envs/3.38.6/flutter`"
+    final pathMatcher = RegExp(r'Created new environment at `([^`]+)`');
+    final output = createProgress.lines.join('\n');
+    final match = pathMatcher.firstMatch(output);
+    if (match != null) {
+      final flutterPath = match.group(1);
+      printVerbose('Extracted Flutter SDK path from puro create: $flutterPath');
+      return flutterPath;
+    } else {
+      printVerbose(
+        'Could not extract Flutter SDK path from puro create output.\n$output',
       );
-    } catch (e, stackTrace) {
-      print('puro create failed: $e');
-      print(stackTrace);
-      if (createProgress.lines.isNotEmpty) {
-        print('output:\n${createProgress.lines.join('\n')}');
-      }
-      rethrow;
+      return null;
     }
+  } catch (e, stackTrace) {
+    print('puro create failed: $e');
+    print(stackTrace);
+    if (createProgress.lines.isNotEmpty) {
+      print('output:\n${createProgress.lines.join('\n')}');
+    }
+    rethrow;
   }
 }
 
