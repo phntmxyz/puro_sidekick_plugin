@@ -5,7 +5,6 @@ import 'package:dcli/dcli.dart' as dcli;
 import 'package:puro_sidekick_plugin/puro_sidekick_plugin.dart';
 import 'package:puro_sidekick_plugin/src/flutter_sdk.dart';
 import 'package:puro_sidekick_plugin/src/install_puro.dart';
-import 'package:puro_sidekick_plugin/src/puro.dart';
 import 'package:puro_sidekick_plugin/src/version_parser.dart';
 import 'package:sidekick_core/sidekick_core.dart';
 
@@ -177,7 +176,7 @@ Future<String?> _createPuroEnv(Version flutterSdkVersion) async {
 
     // Parse the Flutter SDK path from the output
     // Example: "Created new environment at `/Users/pascalwelsch/.puro/envs/3.38.6/flutter`"
-    final pathMatcher = RegExp(r'Created new environment at `([^`]+)`');
+    final pathMatcher = RegExp('Created new environment at `([^`]+)`');
     final output = createProgress.lines.join('\n');
     final match = pathMatcher.firstMatch(output);
     if (match != null) {
