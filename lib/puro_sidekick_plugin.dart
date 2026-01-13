@@ -101,7 +101,23 @@ Future<void> initializePuro(SdkInitializerContext context) async {
   await _bindPuroToProject(packageDir, versions.flutterVersion);
 
   // Create symlink to puro flutter sdk
-  final flutterPath = cachedFlutterPath ?? await puroFlutterSdkPath(packageDir);
+  // Construct path directly instead of calling puro flutter --version
+  String flutterPath;
+  if (cachedFlutterPath != null) {
+    flutterPath = cachedFlutterPath;
+    printVerbose('Using cached path from puro create');
+  } else {
+    final constructedPath =
+        Directory('${puroRootDir.path}/envs/$versionString/flutter');
+    if (constructedPath.existsSync()) {
+      flutterPath = constructedPath.absolute.path;
+      printVerbose('Using constructed path: $flutterPath');
+    } else {
+      printVerbose(
+          'Constructed path not found, falling back to puro flutter --version');
+      flutterPath = await puroFlutterSdkPath(packageDir);
+    }
+  }
   final flutterBinPath = Directory(flutterPath).directory('bin');
   printVerbose('Use Puro Flutter SDK: $flutterPath');
 
