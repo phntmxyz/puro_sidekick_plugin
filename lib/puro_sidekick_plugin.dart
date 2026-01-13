@@ -92,7 +92,7 @@ Future<void> initializePuro(SdkInitializerContext context) async {
 
   // Setup puro environment
   await _createPuroEnvironment(packageDir, versions.flutterVersion);
-  await _binPuroToProject(packageDir, versions.flutterVersion);
+  await _bindPuroToProject(packageDir, versions.flutterVersion);
 
   // Create symlink to puro flutter sdk
   final flutterPath = await puroFlutterSdkPath(packageDir);
@@ -153,7 +153,7 @@ Future<void> _createPuroEnvironment(
   }
 }
 
-Future<void> _binPuroToProject(
+Future<void> _bindPuroToProject(
   Directory packageDir,
   Version flutterSdkVersion,
 ) async {
@@ -162,7 +162,14 @@ Future<void> _binPuroToProject(
   final progress = Progress.capture();
   try {
     await puro(
-      ['use', '--project', packageDir.absolute.path, versionString],
+      [
+        'use',
+        '--project',
+        packageDir.absolute.path,
+        '--no-vscode',
+        '--no-intellij',
+        versionString,
+      ],
       progress: progress,
     );
   } catch (e, stackTrace) {
