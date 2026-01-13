@@ -15,7 +15,7 @@ environment:
 dependencies:
   dcli: ^7.0.2
   pub_semver: ^2.1.4
-  sidekick_core: ^3.0.0-preview.5
+  sidekick_core: ^3.0.0
   yaml: ^3.1.1
 
 dev_dependencies:
