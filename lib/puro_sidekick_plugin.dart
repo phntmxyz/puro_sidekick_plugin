@@ -33,16 +33,14 @@ Future<void> initializePuro(SdkInitializerContext context) async {
 
   // Check if puro is already installed
   if (puroPath != null && puroPath.existsSync()) {
-    printVerbose(
-      'Puro is already installed at ${puroPath.parent.parent.absolute.path}',
-    );
     puroRootDir = puroPath.parent.parent;
+    printVerbose('Puro is already installed at ${puroRootDir.absolute.path}');
     checkForUpdates = true;
   } else {
-    // Install puro
     puroRootDir = installPuro();
   }
   dcli.env['PURO_ROOT'] = puroRootDir.absolute.path;
+  printVerbose('PURO_ROOT: ${puroRootDir.absolute.path}');
 
   // Check if puro is up to date
   if (checkForUpdates && !_alreadyCheckedForUpdate) {
@@ -93,11 +91,19 @@ Future<void> initializePuro(SdkInitializerContext context) async {
 
   // Setup puro environment
   final versionString = versions.flutterVersion.toString();
+  printVerbose('Required Flutter version: $versionString');
+
   final existingEnvs = await _getPuroEnvs();
+  printVerbose('Existing puro environments: ${existingEnvs.join(', ')}');
+
   String? cachedFlutterPath;
   if (!existingEnvs.contains(versionString)) {
+    printVerbose('Environment $versionString does not exist, creating it');
     cachedFlutterPath = await _createPuroEnv(versions.flutterVersion);
+  } else {
+    printVerbose('Environment $versionString already exists');
   }
+
   await _bindPuroToProject(packageDir, versions.flutterVersion);
 
   // Create symlink to puro flutter sdk
@@ -119,7 +125,7 @@ Future<void> initializePuro(SdkInitializerContext context) async {
     }
   }
   final flutterBinPath = Directory(flutterPath).directory('bin');
-  printVerbose('Use Puro Flutter SDK: $flutterPath');
+  printVerbose('Flutter SDK: $flutterPath');
 
   dcli.env['PURO_FLUTTER_BIN'] = flutterBinPath.absolute.path;
   createSymlink(symlinkPath, flutterPath);
@@ -143,7 +149,9 @@ Future<Set<String>> _getPuroEnvs() async {
   try {
     await puro(['ls'], progress: lsProgress);
     final output = lsProgress.lines.join('\n');
-    return parsePuroEnvironments(output);
+    final envs = parsePuroEnvironments(output);
+    printVerbose('Found ${envs.length} environment(s)');
+    return envs;
   } catch (e, stackTrace) {
     print('puro ls failed: $e');
     print(stackTrace);
@@ -158,7 +166,7 @@ Future<Set<String>> _getPuroEnvs() async {
 /// Returns null if the path could not be extracted from the output.
 Future<String?> _createPuroEnv(Version flutterSdkVersion) async {
   final versionString = flutterSdkVersion.toString();
-  printVerbose('Create new Puro environment: $flutterSdkVersion');
+  printVerbose('Creating environment: $versionString');
 
   final createProgress = Progress.capture();
   try {
@@ -174,12 +182,11 @@ Future<String?> _createPuroEnv(Version flutterSdkVersion) async {
     final match = pathMatcher.firstMatch(output);
     if (match != null) {
       final flutterPath = match.group(1);
-      printVerbose('Extracted Flutter SDK path from puro create: $flutterPath');
+      printVerbose('Extracted SDK path from output: $flutterPath');
       return flutterPath;
     } else {
-      printVerbose(
-        'Could not extract Flutter SDK path from puro create output.\n$output',
-      );
+      printVerbose('Could not extract SDK path from puro create output');
+      printVerbose('Output was:\n$output');
       return null;
     }
   } catch (e, stackTrace) {
