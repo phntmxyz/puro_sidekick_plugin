@@ -17,7 +17,7 @@ Install the plugin with the following command:
 ```
 
 After installation, the plugin is available in the Sidekick CLI.
-Afterward it will check if `puro` is installed already, if not it will aks you to install `puro` globally 
+Afterward it will check if `puro` is installed already, if not it will aks you to install `puro` globally
 or if you want to use it locally for the current project.
 
 ```bash
@@ -93,6 +93,7 @@ environment:
 ```
 
 **Priority order:**
+
 1. `sidekick.puro.useFlutterSdk` (highest - overrides everything)
 2. `flutter`
 3. `sidekick.puro.useDartSdk`
@@ -106,11 +107,11 @@ You can add `resolution: workspace` to your package-level `pubspec.yaml` to alwa
 
 ### Debugging
 
-Something seems fishy? 
+Something seems fishy?
 You can enable debug logging for the plugin by setting the `PURO_SIDEKICK_PLUGIN_VERBOSE` environment variable to `true`:
 
 ```bash
-$ export PURO_SIDEKICK_PLUGIN_VERBOSE=true
+export PURO_SIDEKICK_PLUGIN_VERBOSE=true
 ```
 
 ## License

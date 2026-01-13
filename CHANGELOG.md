@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.3.3
+- **Optimize** `puro`/`flutter` calls by constructing SDK paths directly instead of calling `puro flutter --version` (#11)
+- **Improve** Parsing of `puro ls` output (#11)
+- **Fix** Disable IDE configuration to prevent version conflicts when commands are run from different packages (#10)
+
 ## 1.3.2
 - Cache GitHub API responses for puro version checks (24h TTL) to avoid rate limiting
 - Bump `puro` fallback version to `1.5.0`
