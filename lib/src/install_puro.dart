@@ -12,7 +12,9 @@ const puroFallbackVersion = '1.5.0';
 Directory installPuro({
   dcli.Progress? progress,
 }) {
-  final installGlobal = dcli.ask(
+  // Allow forcing global install via env var, useful in CI
+  final envValue = Platform.environment['SIDEKICK_PURO_INSTALL_GLOBAL'];
+  final installGlobal = envValue ?? dcli.ask(
     "Puro is not installed.\nDo you want to install Puro global? (y/N)",
     defaultValue: 'n',
   );

@@ -53,3 +53,14 @@ jobs:
 
       - name: Install dependencies using the Puro Sidekick Plugin
         run: cd ci_test && ./skt flutter pub get
+
+  build-global:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies using the Puro Sidekick Plugin (global)
+        run: cd ci_test && ./skt flutter pub get
+        env:
+          SIDEKICK_PURO_INSTALL_GLOBAL: 'y'
