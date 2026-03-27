@@ -1,5 +1,7 @@
 # Puro Sidekick Plugin
 
+[![pub package](https://img.shields.io/pub/v/puro_sidekick_plugin.svg)](https://pub.dev/packages/puro_sidekick_plugin)
+
 This is a plugin for [phntmxyz/sidekick](https://github.com/phntmxyz/sidekick) that integrates with [`puro`](https://github.com/pingbird/puro) to manage Flutter versions. It provides three commands through the Sidekick CLI:
 
 - `<cli> flutter` - Executes the Flutter version managed by Puro
