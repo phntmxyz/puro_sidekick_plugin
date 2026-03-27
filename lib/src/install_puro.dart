@@ -50,6 +50,15 @@ Directory installPuroGlobal(String version, dcli.Progress? progress) {
     throw PuroInstallationFailedException();
   }
 
+  // The install script updates ~/.profile but the current process still has
+  // the old PATH. Add the default puro bin directory so getPuroPath() works.
+  final puroBin = Directory(
+    '${Platform.environment['HOME']}/.puro/bin',
+  );
+  if (puroBin.existsSync()) {
+    dcli.env['PATH'] = '${puroBin.path}:${dcli.env['PATH'] ?? ''}';
+  }
+
   final puroPath = getPuroPath();
   if (puroPath == null) {
     throw PuroInstallationFailedException();
