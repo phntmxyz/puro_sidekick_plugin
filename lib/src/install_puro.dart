@@ -14,10 +14,11 @@ Directory installPuro({
 }) {
   // Allow forcing global install via env var, useful in CI
   final envValue = Platform.environment['SIDEKICK_PURO_INSTALL_GLOBAL'];
-  final installGlobal = envValue ?? dcli.ask(
-    "Puro is not installed.\nDo you want to install Puro global? (y/N)",
-    defaultValue: 'n',
-  );
+  final installGlobal = envValue ??
+      dcli.ask(
+        "Puro is not installed.\nDo you want to install Puro global? (y/N)",
+        defaultValue: 'n',
+      );
 
   final latestVersion = getLatestPuroVersion();
   print('Download Puro $latestVersion');
