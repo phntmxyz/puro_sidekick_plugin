@@ -4,7 +4,7 @@ version: 0.0.1
 publish_to: none
 
 environment:
-  sdk: ">=3.5.4 <4.0.0"
+  sdk: ">=3.10.9 <4.0.0"
 
 executables:
   main:
@@ -12,11 +12,13 @@ executables:
 dependencies:
   puro_sidekick_plugin:
     path: ../../
-  sidekick_core: ^3.0.0-preview.5
+  sidekick_core: ^3.1.1
+  dcli: ^8.2.0
+  pubspec_manager: ^3.0.0
 
 dev_dependencies:
   lint: ^2.0.0
 
 # generated code, do not edit this manually
 sidekick:
-  cli_version: 3.0.0-preview.5
+  cli_version: 3.1.1

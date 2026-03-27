@@ -18,6 +18,7 @@ Future<void> runSkt(List<String> args) async {
     ..addCommand(CleanCommand())
     ..addCommand(DartAnalyzeCommand())
     ..addCommand(FormatCommand())
+    ..addCommand(TestCommand())
     ..addCommand(SidekickCommand())
     ..addCommand(PuroCommand());
 
