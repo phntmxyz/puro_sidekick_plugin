@@ -12,10 +12,13 @@ const puroFallbackVersion = '1.5.0';
 Directory installPuro({
   dcli.Progress? progress,
 }) {
-  final installGlobal = dcli.ask(
-    "Puro is not installed.\nDo you want to install Puro global? (y/N)",
-    defaultValue: 'n',
-  );
+  // Allow forcing global install via env var, useful in CI
+  final envValue = Platform.environment['SIDEKICK_PURO_INSTALL_GLOBAL'];
+  final installGlobal = envValue ??
+      dcli.ask(
+        "Puro is not installed.\nDo you want to install Puro global? (y/N)",
+        defaultValue: 'n',
+      );
 
   final latestVersion = getLatestPuroVersion();
   print('Download Puro $latestVersion');
@@ -45,6 +48,15 @@ Directory installPuroGlobal(String version, dcli.Progress? progress) {
   }
   if (resultCode != 0) {
     throw PuroInstallationFailedException();
+  }
+
+  // The install script updates ~/.profile but the current process still has
+  // the old PATH. Add the default puro bin directory so getPuroPath() works.
+  final puroBin = Directory(
+    '${Platform.environment['HOME']}/.puro/bin',
+  );
+  if (puroBin.existsSync()) {
+    dcli.env['PATH'] = '${puroBin.path}:${dcli.env['PATH'] ?? ''}';
   }
 
   final puroPath = getPuroPath();
