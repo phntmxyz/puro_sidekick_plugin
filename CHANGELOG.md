@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.4.0
+
+- **Fix** Global puro install failing because `~/.puro/bin` was not added to the process PATH after installation
+- Update `dcli` to `8.2.0` and `sidekick_core` to `3.1.0`
+- Add missing `awaits` in install script
+
 ## 1.3.3
 - **Optimize** `puro`/`flutter` calls by constructing SDK paths directly instead of calling `puro flutter --version` (#11)
 - **Improve** Parsing of `puro ls` output (#11)
