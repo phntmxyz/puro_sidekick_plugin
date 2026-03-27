@@ -17,8 +17,8 @@ Future<void> main() async {
     VersionConstraint.parse('>=3.0.0-preview.5 <4.0.0'),
   );
 
-  addSelfAsDependency();
-  pubGet(package);
+  await addSelfAsDependency();
+  await pubGet(package);
 
   final mainFile = package.cliMainFile;
   if (!mainFile.existsSync()) {
