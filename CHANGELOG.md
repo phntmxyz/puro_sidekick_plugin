@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **Fix** Standalone puro install downloaded the Intel `darwin-x64` binary on Apple Silicon, causing flutter commands to fail with `Bad CPU type in executable` (exit 86) when the user opted out of installing puro globally. Apple Silicon now downloads the `darwin-arm64` build.
+
 ## 1.4.0
 
 - **Fix** Global puro install failing because `~/.puro/bin` was not added to the process PATH after installation
