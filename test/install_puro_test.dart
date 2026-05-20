@@ -1,9 +1,53 @@
+import 'dart:ffi' show Abi;
 import 'dart:io';
 
 import 'package:puro_sidekick_plugin/src/install_puro.dart';
 import 'package:test/test.dart';
 
 void main() {
+  group('puroStandaloneDownloadUrl', () {
+    test('Apple Silicon picks the darwin-arm64 build', () {
+      expect(
+        puroStandaloneDownloadUrl('1.5.0', Abi.macosArm64),
+        'https://puro.dev/builds/1.5.0/darwin-arm64/puro',
+      );
+    });
+
+    test('Intel Mac picks the darwin-x64 build', () {
+      expect(
+        puroStandaloneDownloadUrl('1.5.0', Abi.macosX64),
+        'https://puro.dev/builds/1.5.0/darwin-x64/puro',
+      );
+    });
+
+    test('Linux x64 picks the linux-x64 build', () {
+      expect(
+        puroStandaloneDownloadUrl('1.5.0', Abi.linuxX64),
+        'https://puro.dev/builds/1.5.0/linux-x64/puro',
+      );
+    });
+
+    test('Windows x64 picks the windows-x64 build (.exe)', () {
+      expect(
+        puroStandaloneDownloadUrl('1.5.0', Abi.windowsX64),
+        'https://puro.dev/builds/1.5.0/windows-x64/puro.exe',
+      );
+    });
+
+    test('returns null for architectures puro does not publish', () {
+      // Puro does not ship linux-arm64 or windows-arm64 builds.
+      expect(puroStandaloneDownloadUrl('1.5.0', Abi.linuxArm64), isNull);
+      expect(puroStandaloneDownloadUrl('1.5.0', Abi.windowsArm64), isNull);
+    });
+
+    test('embeds the requested version', () {
+      expect(
+        puroStandaloneDownloadUrl('2.0.0', Abi.macosArm64),
+        'https://puro.dev/builds/2.0.0/darwin-arm64/puro',
+      );
+    });
+  });
+
   group('getLatestPuroVersion', () {
     late Directory tempDir;
     late File cacheFile;

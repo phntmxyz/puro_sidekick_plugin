@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:ffi' show Abi;
 
 import 'package:dcli/dcli.dart' as dcli;
 import 'package:puro_sidekick_plugin/puro_sidekick_plugin.dart';
@@ -68,33 +69,23 @@ Directory installPuroGlobal(String version, dcli.Progress? progress) {
 }
 
 Directory installPuroStandalone(String version, dcli.Progress? progress) {
-  final puroWindowsDownloadUrl =
-      "https://puro.dev/builds/$version/windows-x64/puro.exe";
-  final puroDarwinDownloadUrl =
-      "https://puro.dev/builds/$version/darwin-x64/puro";
-  final puroLinuxDownloadUrl =
-      "https://puro.dev/builds/$version/linux-x64/puro";
+  final downloadUrl = puroStandaloneDownloadUrl(version, Abi.current());
+  if (downloadUrl == null) {
+    print('Unsupported platform/architecture: ${Abi.current()}');
+    throw PuroInstallationFailedException();
+  }
 
   int resultCode = -1;
   final downloadPath = getPuroStandaloneBinPath(createIfNotExists: true);
   if (Platform.isWindows) {
-    resultCode = installPuroStandaloneWindows(
-      puroWindowsDownloadUrl,
-      downloadPath,
-      progress,
-    );
+    resultCode =
+        installPuroStandaloneWindows(downloadUrl, downloadPath, progress);
   } else if (Platform.isMacOS) {
-    resultCode = installPuroStandaloneMacOs(
-      puroDarwinDownloadUrl,
-      downloadPath,
-      progress,
-    );
+    resultCode =
+        installPuroStandaloneMacOs(downloadUrl, downloadPath, progress);
   } else if (Platform.isLinux) {
-    resultCode = installPuroStandaloneLinux(
-      puroLinuxDownloadUrl,
-      downloadPath,
-      progress,
-    );
+    resultCode =
+        installPuroStandaloneLinux(downloadUrl, downloadPath, progress);
   } else {
     print('Unsupported platform.');
   }
@@ -102,6 +93,29 @@ Directory installPuroStandalone(String version, dcli.Progress? progress) {
     throw PuroInstallationFailedException();
   }
   return downloadPath.parent;
+}
+
+/// Returns the puro standalone download URL for [version] on the given [abi],
+/// or `null` if puro does not publish a build for that target.
+///
+/// Puro currently publishes binaries for `darwin-x64`, `darwin-arm64`,
+/// `linux-x64` and `windows-x64`. On Apple Silicon (`Abi.macosArm64`) the
+/// arm64 build must be used — running the x64 binary without Rosetta 2
+/// installed fails with macOS' "Bad CPU type in executable" (exit 86).
+String? puroStandaloneDownloadUrl(String version, Abi abi) {
+  if (abi == Abi.macosArm64) {
+    return 'https://puro.dev/builds/$version/darwin-arm64/puro';
+  }
+  if (abi == Abi.macosX64) {
+    return 'https://puro.dev/builds/$version/darwin-x64/puro';
+  }
+  if (abi == Abi.linuxX64) {
+    return 'https://puro.dev/builds/$version/linux-x64/puro';
+  }
+  if (abi == Abi.windowsX64) {
+    return 'https://puro.dev/builds/$version/windows-x64/puro.exe';
+  }
+  return null;
 }
 
 /// Default cache TTL of 24 hours
