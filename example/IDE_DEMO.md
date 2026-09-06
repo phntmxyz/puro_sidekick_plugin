@@ -1,12 +1,13 @@
 # Local Sidekick + Puro IDE demo
 
-This demo uses real `DepsCommand`, `initializePuro`, and Puro IDE generation in a
-disposable project. It never opens an IDE or changes another project's settings.
+This demo uses real `DepsCommand`, `initializePuro`, and Puro IDE generation in a disposable project.
+It never opens an IDE or changes another project's settings.
 
 ## Local dependency setup
 
-First merge and release the Sidekick global `addDepsHook` API (planned as 3.2.0). The plugin
-requires that release. Until then, use a local `pubspec_overrides.yaml`:
+First merge and release the Sidekick global `addDepsHook` API (planned as 3.2.0).
+The plugin requires that release.
+Until then, use a local `pubspec_overrides.yaml`:
 
 ```yaml
 dependency_overrides:
@@ -14,9 +15,9 @@ dependency_overrides:
     path: ../sidekick/sidekick_core
 ```
 
-From this plugin checkout, run `dart pub get`. Use Dart 3.8 for the repository's
-lint and formatting conventions. Puro must already be installed; the demo can
-download missing Flutter environments.
+From this plugin checkout, run `dart pub get`.
+Use Dart 3.8 for the repository's lint and formatting conventions.
+Puro must already be installed; the demo can download missing Flutter environments.
 
 ## Try it
 
@@ -35,16 +36,15 @@ dart run example/ide_demo.dart /tmp/sidekick-ide-demo puro ide
 dart run example/ide_demo.dart /tmp/sidekick-ide-demo puro ide --reset
 ```
 
-The app uses Flutter 3.32.8 (Dart 3.8.1); the library uses Flutter 3.27.4
-(Dart 3.6.2). The default root IDE SDK is 3.32.8. After explicitly selecting
-3.47.1, `deps` still executes each package's own SDK and leaves the root IDE on
-3.47.1. The standalone library IDE stays on 3.27.4.
+The app uses Flutter 3.32.8 (Dart 3.8.1); the library uses Flutter 3.27.4 (Dart 3.6.2).
+The default root IDE SDK is 3.32.8.
+After explicitly selecting 3.47.1, `deps` still executes each package's own SDK and leaves the root IDE on 3.47.1.
+The standalone library IDE stays on 3.27.4.
 
-Inspect `.vscode/settings.json` at the root and in `packages/library`, plus
-`packages/library/.idea/libraries/Dart_SDK.xml`. The root JSONC comment and
-`editor.tabSize` setting survive configuration. The root `.puro.json` remains
-on 3.27.4 regardless of the personal IDE choice.
+Inspect `.vscode/settings.json` at the root and in `packages/library`, plus `packages/library/.idea/libraries/Dart_SDK.xml`.
+The root JSONC comment and `editor.tabSize` setting survive configuration.
+The root `.puro.json` remains on 3.27.4 regardless of the personal IDE choice.
 
-Personal demo preferences live outside this project, under the path printed by
-`puro ide --status`. Remove that specific file if you want to repeat initial
-setup. Use a new empty demo directory for a completely fresh run.
+Personal demo preferences live outside this project, under the path printed by `puro ide --status`.
+Remove that specific file if you want to repeat initial setup.
+Use a new empty demo directory for a completely fresh run.
