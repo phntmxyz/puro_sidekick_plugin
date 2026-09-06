@@ -107,6 +107,57 @@ environment:
 
 You can add `resolution: workspace` to your package-level `pubspec.yaml` to always use the Flutter and Dart versions from the root `pubspec.yaml`.
 
+### Personal IDE SDK
+
+Requires the Sidekick `addDepsHook` API (planned for sidekick_core 3.2.0).
+Plugin installation registers its hook alongside the SDK initializer. For an
+existing CLI, register it explicitly:
+
+```dart
+addDepsHook(configurePuroIde);
+runner.addCommand(DepsCommand());
+```
+
+`<cli> deps` configures a detected IDE workspace after all selected packages have
+fetched dependencies successfully. The repository workspace follows `mainProject`;
+a standalone package workspace follows its own requirements. Existing manually
+configured SDKs are preserved until you explicitly opt in.
+
+```bash
+<cli> puro ide                             # Interactive workspace and SDK choice
+<cli> puro ide --status                    # Show the saved choice
+<cli> puro ide --package packages/app      # Follow this package's requirements
+<cli> puro ide --sdk 3.47.1                 # Pin an experimental SDK/environment
+<cli> puro ide --reset                     # Follow the default package again
+<cli> puro ide --workspace packages/lib --reset --editor intellij
+```
+
+`--workspace` and `--package` are paths relative to the repository root. Choose
+`--editor vscode`, `--editor intellij` (also Android Studio), or `--editor both`
+when the workspace has no existing IDE configuration. Non-interactive terminals
+require an explicit choice.
+
+Automatic workspace detection uses the invocation directory and existing `.idea`
+or `.vscode` folders. It cannot identify a live IDE window; use `--workspace` when
+you opened a different folder, or when multiple workspace roots are involved.
+VS Code `.code-workspace` files are not edited by this command.
+
+Choices are personal and stored outside the repository under
+`~/.config/sidekick/puro-ide/`, keyed by the workspace's resolved path. A package
+choice tracks its requirements; a named SDK stays selected across `deps` runs.
+Root and standalone package workspaces have independent choices. Manual changes
+to managed IDE settings are preserved; run `puro ide` again to resume management.
+`deps --package` filters dependency fetching, not the IDE SDK choice.
+
+The plugin asks Puro to generate IDE configuration in an isolated directory and
+copies the IDE files back. Personal SDK selection does not change `.puro.json`,
+`pubspec.yaml`, or the SDK used by Sidekick's `dart`/`flutter` commands. The global deps hook receives per-package results even after failures; this
+plugin checks `context.isSuccess` and skips IDE setup when dependency fetching
+failed. IDE setup errors fail `deps` instead of being silently ignored.
+
+See [the local demo](example/IDE_DEMO.md) for a complete example using both local
+packages before releasing the Sidekick API.
+
 ### Debugging
 
 Something seems fishy?

@@ -26,6 +26,7 @@ Future<ProcessCompletion> puro(
       nothrow: nothrow || throwOnError != null,
       progress: progress,
       terminal: progress == null,
+      includeParentEnvironment: false,
     );
 
     exitCode = process.exitCode ?? -1;
