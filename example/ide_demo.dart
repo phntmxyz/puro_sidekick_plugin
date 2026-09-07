@@ -66,7 +66,7 @@ sidekick:
     flutterSdkPath: flutterSdkSymlink(),
   );
   addSdkInitializer(initializePuro);
-  addDepsHook(configurePuroIde);
+  addAfterDepsHook(configurePuroIde);
   runner
     ..addCommand(DepsCommand())
     ..addCommand(PuroCommand());

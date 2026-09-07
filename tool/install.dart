@@ -33,7 +33,7 @@ Future<void> main() async {
   mainSourceFile.registerInitializer(
     'addSdkInitializer(initializePuro);',
   );
-  mainSourceFile.registerInitializer('addDepsHook(configurePuroIde);');
+  mainSourceFile.registerInitializer('addAfterDepsHook(configurePuroIde);');
   mainSourceFile.flush();
 
   // Usually the Flutter and Dart command from sidekick_core are already present

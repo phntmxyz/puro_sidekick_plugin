@@ -6,9 +6,9 @@ import 'package:puro_sidekick_plugin/src/ide/ide_preferences.dart';
 import 'package:puro_sidekick_plugin/src/version_parser.dart';
 import 'package:sidekick_core/sidekick_core.dart';
 
-/// Register as `addDepsHook(configurePuroIde)`.
+/// Register as `addAfterDepsHook(configurePuroIde)`.
 /// Personal IDE choices never affect SDK selection for Sidekick commands.
-Future<void> configurePuroIde(DepsContext context) async {
+Future<void> configurePuroIde(AfterDepsContext context) async {
   if (!context.isSuccess) {
     return;
   }

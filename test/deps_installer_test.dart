@@ -12,19 +12,19 @@ void main() {
     final file = dir.file('main.dart')..writeAsStringSync('''
 void main() {
   final runner = initializeSidekick();
-  addDepsHook(existingSetup);
+  addAfterDepsHook(existingSetup);
   runner.addCommand(DepsCommand(excludeGlob: ['**/example/**']));
 }
 ''');
     final source = ModifiableSourceFile(file);
     addTearDown(source.dispose);
-    source.registerInitializer('addDepsHook(configurePuroIde);');
-    expect(source.content, contains('addDepsHook(configurePuroIde);'));
-    expect(source.content, contains('addDepsHook(existingSetup);'));
+    source.registerInitializer('addAfterDepsHook(configurePuroIde);');
+    expect(source.content, contains('addAfterDepsHook(configurePuroIde);'));
+    expect(source.content, contains('addAfterDepsHook(existingSetup);'));
     expect(source.content,
         contains("DepsCommand(excludeGlob: ['**/example/**'])"));
     source.flush();
-    source.registerInitializer('addDepsHook(configurePuroIde);');
+    source.registerInitializer('addAfterDepsHook(configurePuroIde);');
     expect(RegExp('configurePuroIde').allMatches(source.content), hasLength(1));
   });
 
@@ -41,9 +41,9 @@ void main() {
     final source = ModifiableSourceFile(file);
     addTearDown(source.dispose);
     source.registerInitializer('addSdkInitializer(initializePuro);');
-    source.registerInitializer('addDepsHook(configurePuroIde);');
+    source.registerInitializer('addAfterDepsHook(configurePuroIde);');
     expect(source.content, contains('addSdkInitializer(initializePuro);'));
-    expect(source.content, contains('addDepsHook(configurePuroIde);'));
+    expect(source.content, contains('addAfterDepsHook(configurePuroIde);'));
     expect(source.content, contains('registerCommands(runner);'));
   });
 }

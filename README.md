@@ -109,12 +109,12 @@ You can add `resolution: workspace` to your package-level `pubspec.yaml` to alwa
 
 ### Personal IDE SDK
 
-Requires the Sidekick `addDepsHook` API (planned for sidekick_core 3.2.0).
+Requires the Sidekick `addAfterDepsHook` API, merged and awaiting the sidekick_core 3.2.0 release.
 Plugin installation registers its hook alongside the SDK initializer.
 For an existing CLI, register it explicitly:
 
 ```dart
-addDepsHook(configurePuroIde);
+addAfterDepsHook(configurePuroIde);
 runner.addCommand(DepsCommand());
 ```
 

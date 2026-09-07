@@ -5,9 +5,9 @@ It never opens an IDE or changes another project's settings.
 
 ## Local dependency setup
 
-First merge and release the Sidekick global `addDepsHook` API (planned as 3.2.0).
-The plugin requires that release.
-Until then, use a local `pubspec_overrides.yaml`:
+The Sidekick global `addAfterDepsHook` API is merged but not yet released.
+The plugin requires the release that carries it, planned as 3.2.0.
+Until then, use a local `pubspec_overrides.yaml` pointing at a Sidekick checkout on `main`:
 
 ```yaml
 dependency_overrides:

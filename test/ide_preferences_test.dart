@@ -48,7 +48,7 @@ void main() {
   test('deps hook skips IDE setup after a failed run', () async {
     // No Sidekick runner is initialized: the guard must return before accessing
     // project context or attempting any IDE configuration.
-    await configurePuroIde(DepsContext(results: [
+    await configurePuroIde(AfterDepsContext(results: [
       DepsPackageResult.failure(app,
           error: StateError('pub get failed'), stackTrace: StackTrace.current),
     ]));
