@@ -14,7 +14,7 @@ Future<void> main() async {
   requireDependencyVersion(
     package,
     'sidekick_core',
-    VersionConstraint.parse('>=3.0.0-preview.5 <4.0.0'),
+    VersionConstraint.parse('>=3.2.0 <4.0.0'),
   );
 
   await addSelfAsDependency();
@@ -30,9 +30,10 @@ Future<void> main() async {
   mainSourceFile.addImport(
     "import 'package:puro_sidekick_plugin/puro_sidekick_plugin.dart';",
   );
-  mainSourceFile.registerSdkInitializer(
+  mainSourceFile.registerInitializer(
     'addSdkInitializer(initializePuro);',
   );
+  mainSourceFile.registerInitializer('addAfterDepsHook(configurePuroIde);');
   mainSourceFile.flush();
 
   // Usually the Flutter and Dart command from sidekick_core are already present

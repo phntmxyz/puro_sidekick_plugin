@@ -21,7 +21,10 @@ extension MainFileModifiers on ModifiableSourceFile {
     );
   }
 
-  void registerSdkInitializer(String block) {
+  void registerInitializer(String block) {
+    if (content.contains(block)) {
+      return;
+    }
     final initializeSidekickMethod = analyze()
         .nodes
         .whereType<MethodInvocation>()

@@ -30,3 +30,5 @@ doc/api/
 bin/puro
 .idea/
 .vscode/
+# Local cross-package development overrides
+pubspec_overrides.yaml

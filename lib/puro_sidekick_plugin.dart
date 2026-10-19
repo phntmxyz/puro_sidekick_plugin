@@ -11,6 +11,8 @@ import 'package:sidekick_core/sidekick_core.dart';
 export 'package:puro_sidekick_plugin/src/commands/puro_command.dart';
 export 'package:puro_sidekick_plugin/src/flutter_sdk.dart'
     hide createSymlink, puroFlutterSdkPath;
+export 'package:puro_sidekick_plugin/src/ide/puro_ide.dart'
+    show configurePuroIde;
 export 'package:puro_sidekick_plugin/src/puro.dart';
 
 bool _alreadyCheckedForUpdate = false;
