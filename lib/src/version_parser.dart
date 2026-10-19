@@ -323,7 +323,7 @@ class VersionParser {
     String? flutterConstraint,
   }) async {
     final availableVersions = await _parseAvailableVersions();
-    return _getBestFlutterVersion(
+    return await _getBestFlutterVersion(
       availableVersions,
       dartConstraint,
       flutterConstraint,
