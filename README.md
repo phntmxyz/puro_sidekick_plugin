@@ -2,11 +2,11 @@
 
 [![pub package](https://img.shields.io/pub/v/puro_sidekick_plugin.svg)](https://pub.dev/packages/puro_sidekick_plugin)
 
-This is a plugin for [phntmxyz/sidekick](https://github.com/phntmxyz/sidekick) that integrates with [`puro`](https://github.com/pingbird/puro) to manage Flutter versions. It provides three commands through the Sidekick CLI:
+This is a plugin for [phntmxyz/sidekick](https://github.com/phntmxyz/sidekick) that integrates with [`puro2`](https://github.com/phntmxyz/puro2), phntm's fork of [Puro](https://github.com/pingbird/puro), to manage Flutter versions. It provides three commands through the Sidekick CLI:
 
 - `<cli> flutter` - Executes the Flutter version managed by Puro
 - `<cli> dart` - Executes the Dart version managed by Puro
-- `<cli> puro` - Executes Puro
+- `<cli> puro` - Executes puro2
 
 The `flutterSdkPath:` binds the current Puro environment SDK, allowing the `flutter()` and `dart()` functions in your scripts to use the pinned versions. If you prefer, you can use `puro()` for explicitness.
 
@@ -19,14 +19,19 @@ Install the plugin with the following command:
 ```
 
 After installation, the plugin is available in the Sidekick CLI.
-Afterward it will check if `puro` is installed already, if not it will aks you to install `puro` globally
+Afterward it will check if `puro2` is installed already, if not it will ask you to install `puro2` globally
 or if you want to use it locally for the current project.
+The plugin downloads puro2 2.0.0 from [GitHub Releases](https://github.com/phntmxyz/puro2/releases/tag/2.0.0) and checks its SHA-256 before running it.
+Set `SIDEKICK_PURO_INSTALL_GLOBAL=y` (or `n`) to skip the question, for example in CI.
 
 ```bash
 ~/project master > <cli> flutter --version                                                                                                                   5s
-Puro is not installed.
-Do you want to install Puro global? (y/n) [n] 
+Puro2 is not installed.
+Do you want to install Puro2 globally? (y/N) [n] 
 ```
+
+An existing `puro` installation is not used.
+A global install puts `puro2` next to it in `~/.puro/bin`, and environments and caches in `~/.puro` are shared.
 
 ## Usage
 

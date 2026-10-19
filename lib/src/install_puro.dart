@@ -1,331 +1,215 @@
-import 'dart:convert';
 import 'dart:ffi' show Abi;
 
+import 'package:crypto/crypto.dart';
 import 'package:dcli/dcli.dart' as dcli;
 import 'package:puro_sidekick_plugin/puro_sidekick_plugin.dart';
 import 'package:sidekick_core/sidekick_core.dart';
 
-const puroFallbackVersion = '1.5.0';
+/// The puro2 version this plugin installs
+const puro2Version = '2.0.0';
 
-/// Executes Flutter CLI via puro
+/// SHA-256 of each puro2 [puro2Version] binary, copied from the release's
+/// SHA256SUMS
+const _puro2Sha256 = {
+  'darwin-arm64':
+      '09118b9933b528eaf2976e7a901aa83f31a819ba19e1e3dc144addd8e8bdf89c',
+  'darwin-x64':
+      '03e958a9e378f886767c91315eb1b251f3eebb0148f8413caf8a4a57618155ea',
+  'linux-x64':
+      '73345cb486a03a844238a213b035a87b37f71dbcab4ff3ffd5a60a290eeaf118',
+  'windows-x64':
+      'e138361f150bda416c546b21e4450b9f240c39978ce7cdac68679405cfa3e732',
+};
+
+/// Downloads and installs puro2, globally or into the sidekick build folder
 ///
 /// https://github.com/phntmxyz/puro_sidekick_plugin
-Directory installPuro({
+Future<Directory> installPuro({
   dcli.Progress? progress,
-}) {
+}) async {
   // Allow forcing global install via env var, useful in CI
   final envValue = Platform.environment['SIDEKICK_PURO_INSTALL_GLOBAL'];
   final installGlobal = envValue ??
       dcli.ask(
-        "Puro is not installed.\nDo you want to install Puro global? (y/N)",
+        "Puro2 is not installed.\nDo you want to install Puro2 globally? (y/N)",
         defaultValue: 'n',
       );
 
-  final latestVersion = getLatestPuroVersion();
-  print('Download Puro $latestVersion');
+  print('Download Puro2 $puro2Version');
 
   if (installGlobal == 'y') {
-    final globalPath = installPuroGlobal(latestVersion, progress);
-    print('Puro installed global at ${globalPath.absolute.path}');
+    final globalPath = await installPuroGlobal(progress);
+    print('Puro2 installed global at ${globalPath.absolute.path}');
     return globalPath;
   } else {
-    final localPath = installPuroStandalone(latestVersion, progress);
-    print('Puro installed local at ${localPath.absolute.path}');
+    final localPath = await installPuroStandalone();
+    print('Puro2 installed local at ${localPath.absolute.path}');
     return localPath;
   }
 }
 
-Directory installPuroGlobal(String version, dcli.Progress? progress) {
-  int resultCode = -1;
-  final downloadPath = Directory.systemTemp..createSync(recursive: true);
-  if (Platform.isWindows) {
-    resultCode = installPuroGlobalWindows(version, downloadPath, progress);
-  } else if (Platform.isMacOS) {
-    resultCode = installPuroGlobalUnix(version, downloadPath, progress);
-  } else if (Platform.isLinux) {
-    resultCode = installPuroGlobalUnix(version, downloadPath, progress);
-  } else {
-    print('Unsupported platform.');
-  }
-  if (resultCode != 0) {
+/// Installs puro2 into `~/.puro` (or `$PURO_ROOT`) and adds it to the PATH
+Future<Directory> installPuroGlobal(dcli.Progress? progress) async {
+  final download = puro2Download(Abi.current());
+  if (download == null) {
+    print('Unsupported platform/architecture: ${Abi.current()}');
     throw PuroInstallationFailedException();
   }
 
-  // The install script updates ~/.profile but the current process still has
-  // the old PATH. Add the default puro bin directory so getPuroPath() works.
-  final puroBin = Directory(
-    '${Platform.environment['HOME']}/.puro/bin',
-  );
+  final tempDir = Directory.systemTemp.createTempSync('puro2_');
+  try {
+    final executable = File('${tempDir.path}/${download.fileName}');
+    await downloadPuro2(download, executable);
+
+    // Same as the official install script: puro2 moves itself into the
+    // bin folder and links the flutter and dart commands
+    final process = dcli.startFromArgs(
+      executable.path,
+      ['install-puro2', '--promote'],
+      nothrow: true,
+      progress: progress,
+      terminal: progress == null,
+    );
+    if (process.exitCode != 0) {
+      throw PuroInstallationFailedException();
+    }
+  } finally {
+    if (tempDir.existsSync()) {
+      tempDir.deleteSync(recursive: true);
+    }
+  }
+
+  // install-puro2 updates the shell profile but the current process still has
+  // the old PATH. Add the puro2 bin directory so getPuroPath() finds it.
+  final puroBin = Directory('${_globalPuroRoot()}/bin');
   if (puroBin.existsSync()) {
-    dcli.env['PATH'] = '${puroBin.path}:${dcli.env['PATH'] ?? ''}';
+    final separator = Platform.isWindows ? ';' : ':';
+    dcli.env['PATH'] = '${puroBin.path}$separator${dcli.env['PATH'] ?? ''}';
   }
 
   final puroPath = getPuroPath();
   if (puroPath == null) {
     throw PuroInstallationFailedException();
   }
-  print('Puro installed at ${puroPath.parent.parent.absolute.path}');
+  print('Puro2 installed at ${puroPath.parent.parent.absolute.path}');
   return puroPath.parent.parent;
 }
 
-Directory installPuroStandalone(String version, dcli.Progress? progress) {
-  final downloadUrl = puroStandaloneDownloadUrl(version, Abi.current());
-  if (downloadUrl == null) {
+/// Installs puro2 into the build folder of the sidekick package
+Future<Directory> installPuroStandalone() async {
+  final download = puro2Download(Abi.current());
+  if (download == null) {
     print('Unsupported platform/architecture: ${Abi.current()}');
     throw PuroInstallationFailedException();
   }
 
-  int resultCode = -1;
-  final downloadPath = getPuroStandaloneBinPath(createIfNotExists: true);
+  final binDir = getPuroStandaloneBinPath(createIfNotExists: true);
+  await downloadPuro2(download, File('${binDir.path}${download.fileName}'));
+  return binDir.parent;
+}
+
+String _globalPuroRoot() {
+  final puroRoot = Platform.environment['PURO_ROOT'];
+  if (puroRoot != null && puroRoot.isNotEmpty) {
+    return puroRoot;
+  }
   if (Platform.isWindows) {
-    resultCode =
-        installPuroStandaloneWindows(downloadUrl, downloadPath, progress);
-  } else if (Platform.isMacOS) {
-    resultCode =
-        installPuroStandaloneMacOs(downloadUrl, downloadPath, progress);
-  } else if (Platform.isLinux) {
-    resultCode =
-        installPuroStandaloneLinux(downloadUrl, downloadPath, progress);
-  } else {
-    print('Unsupported platform.');
+    return '${Platform.environment['USERPROFILE']}/.puro';
   }
-  if (resultCode != 0) {
-    throw PuroInstallationFailedException();
-  }
-  return downloadPath.parent;
+  return '${Platform.environment['HOME']}/.puro';
 }
 
-/// Returns the puro standalone download URL for [version] on the given [abi],
-/// or `null` if puro does not publish a build for that target.
+/// Where to download a puro2 binary from, the SHA-256 it must have, and the
+/// name of the executable once installed
+class Puro2Download {
+  const Puro2Download({
+    required this.url,
+    required this.sha256,
+    required this.fileName,
+  });
+
+  final Uri url;
+  final String sha256;
+  final String fileName;
+}
+
+/// Returns the puro2 [puro2Version] download for the given [abi], or `null` if
+/// puro2 does not publish a build for that target.
 ///
-/// Puro currently publishes binaries for `darwin-x64`, `darwin-arm64`,
-/// `linux-x64` and `windows-x64`. On Apple Silicon (`Abi.macosArm64`) the
-/// arm64 build must be used — running the x64 binary without Rosetta 2
-/// installed fails with macOS' "Bad CPU type in executable" (exit 86).
-String? puroStandaloneDownloadUrl(String version, Abi abi) {
-  if (abi == Abi.macosArm64) {
-    return 'https://puro.dev/builds/$version/darwin-arm64/puro';
-  }
-  if (abi == Abi.macosX64) {
-    return 'https://puro.dev/builds/$version/darwin-x64/puro';
-  }
-  if (abi == Abi.linuxX64) {
-    return 'https://puro.dev/builds/$version/linux-x64/puro';
-  }
-  if (abi == Abi.windowsX64) {
-    return 'https://puro.dev/builds/$version/windows-x64/puro.exe';
-  }
-  return null;
-}
-
-/// Default cache TTL of 24 hours
-const _cacheTtl = Duration(hours: 24);
-
-/// Checks if a cache file is still valid (exists and not expired).
-bool _isCacheValid(File cacheFile, {Duration ttl = _cacheTtl}) {
-  if (!cacheFile.existsSync()) return false;
-  final lastModified = cacheFile.lastModifiedSync();
-  return DateTime.now().difference(lastModified) < ttl;
-}
-
-/// Fetches the latest Puro version from GitHub releases.
-///
-/// The result is cached in the build folder for 24 hours.
-/// [githubReleasesProvider] can be overridden for testing.
-/// [cacheFile] can be overridden for testing.
-String getLatestPuroVersion({
-  String Function()? githubReleasesProvider,
-  File? cacheFile,
-}) {
-  cacheFile ??= File(
-    '${SidekickContext.sidekickPackage.buildDir.path}/puro_latest_version.txt',
-  );
-
-  // Return cached version if available and not expired
-  if (_isCacheValid(cacheFile)) {
-    final cached = cacheFile.readAsStringSync().trim();
-    if (cached.isNotEmpty) {
-      return cached;
-    }
-  }
-
-  try {
-    final resultJson =
-        githubReleasesProvider?.call() ?? _fetchLatestPuroReleaseJson();
-    if (resultJson == null) {
-      return puroFallbackVersion;
-    }
-    final result = jsonDecode(resultJson);
-    if (result is! List || result.isEmpty) {
-      print('Unexpected response from GitHub API: $resultJson');
-      return puroFallbackVersion;
-    }
-    final tagName = (result[0] as Map<String, dynamic>)['tag_name'];
-    if (tagName is! String) {
-      print('Missing or invalid tag_name in GitHub API response');
-      return puroFallbackVersion;
-    }
-
-    // Cache the version (delete first to reset last modified time)
-    if (cacheFile.existsSync()) {
-      cacheFile.deleteSync();
-    }
-    cacheFile.parent.createSync(recursive: true);
-    cacheFile.writeAsStringSync(tagName);
-
-    return tagName;
-  } catch (e, stackTrace) {
-    print('Failed to get the latest Puro version: $e');
-    print(stackTrace);
-    return puroFallbackVersion;
-  }
-}
-
-String? _fetchLatestPuroReleaseJson() {
-  final output = dcli.startFromArgs(
-    'curl',
-    ['https://api.github.com/repos/pingbird/puro/releases?per_page=1&page=1'],
-    progress: Progress.capture(captureStderr: false),
-  );
-  if (output.exitCode != 0) {
-    print('Failed to get the latest Puro version.');
+/// puro2 publishes binaries for `darwin-x64`, `darwin-arm64`, `linux-x64` and
+/// `windows-x64`. On Apple Silicon (`Abi.macosArm64`) the arm64 build must be
+/// used, running the x64 binary without Rosetta 2 installed fails with macOS'
+/// "Bad CPU type in executable" (exit 86).
+Puro2Download? puro2Download(Abi abi) {
+  final target = switch (abi) {
+    Abi.macosArm64 => 'darwin-arm64',
+    Abi.macosX64 => 'darwin-x64',
+    Abi.linuxX64 => 'linux-x64',
+    Abi.windowsX64 => 'windows-x64',
+    _ => null,
+  };
+  if (target == null) {
     return null;
   }
-  return output.lines.join('\n');
+  final extension = abi == Abi.windowsX64 ? '.exe' : '';
+  return Puro2Download(
+    url: Uri.parse(
+      'https://github.com/phntmxyz/puro2/releases/download/'
+      '$puro2Version/puro2-$target$extension',
+    ),
+    sha256: _puro2Sha256[target]!,
+    fileName: 'puro2$extension',
+  );
 }
 
-int installPuroStandaloneMacOs(
-  String downloadUrl,
-  Directory downloadPath,
-  dcli.Progress? progress,
-) {
-  final downloadProcess = dcli.startFromArgs(
-    'bash',
-    [
-      '-c',
-      'curl -O $downloadUrl',
-    ],
-    workingDirectory: downloadPath.path,
-    nothrow: true,
-    progress: progress,
-    terminal: progress == null,
-  );
-
-  if (downloadProcess.exitCode != 0) {
-    return downloadProcess.exitCode ?? -1;
+/// Downloads the puro2 binary to [destination] and makes it executable
+///
+/// Throws [PuroInstallationFailedException] when the download fails or its
+/// SHA-256 doesn't match the pinned one. [destination] is left untouched in
+/// that case.
+Future<void> downloadPuro2(Puro2Download download, File destination) async {
+  final List<int> bytes;
+  final client = HttpClient();
+  try {
+    final request = await client.getUrl(download.url);
+    final response = await request.close();
+    if (response.statusCode != HttpStatus.ok) {
+      print('Failed to download ${download.url}: HTTP ${response.statusCode}');
+      throw PuroInstallationFailedException();
+    }
+    bytes =
+        await response.fold<List<int>>([], (all, chunk) => all..addAll(chunk));
+  } on SocketException catch (e, stackTrace) {
+    print('Failed to download ${download.url}: $e');
+    print(stackTrace);
+    throw PuroInstallationFailedException();
+  } finally {
+    client.close();
   }
 
-  final chmodProcess = dcli.startFromArgs(
-    'bash',
-    [
-      '-c',
-      'chmod +x puro',
-    ],
-    workingDirectory: downloadPath.path,
-    nothrow: true,
-    progress: progress,
-    terminal: progress == null,
-  );
+  verifyPuro2Checksum(bytes, download);
 
-  dcli.env['PURO_ROOT'] = "$downloadPath../";
-
-  return chmodProcess.exitCode ?? -1;
-}
-
-int installPuroStandaloneLinux(
-  String downloadUrl,
-  Directory downloadPath,
-  dcli.Progress? progress,
-) {
-  final downloadProcess = dcli.startFromArgs(
-    'bash',
-    [
-      '-c',
-      'curl -O $downloadUrl',
-    ],
-    workingDirectory: downloadPath.path,
-    nothrow: true,
-    progress: progress,
-    terminal: progress == null,
-  );
-
-  if (downloadProcess.exitCode != 0) {
-    return downloadProcess.exitCode ?? -1;
+  destination.parent.createSync(recursive: true);
+  destination.writeAsBytesSync(bytes);
+  if (!Platform.isWindows) {
+    final chmod = Process.runSync('chmod', ['+x', destination.path]);
+    if (chmod.exitCode != 0) {
+      print('Failed to make ${destination.path} executable: ${chmod.stderr}');
+      throw PuroInstallationFailedException();
+    }
   }
-
-  final chmodProcess = dcli.startFromArgs(
-    'bash',
-    [
-      '-c',
-      'chmod +x puro',
-    ],
-    workingDirectory: downloadPath.path,
-    nothrow: true,
-    progress: progress,
-    terminal: progress == null,
-  );
-
-  dcli.env['PURO_ROOT'] = "$downloadPath../";
-
-  return chmodProcess.exitCode ?? -1;
 }
 
-int installPuroStandaloneWindows(
-  String downloadUrl,
-  Directory downloadPath,
-  dcli.Progress? progress,
-) {
-  final command =
-      'Invoke-WebRequest -Uri "$downloadUrl" -OutFile "\$env:temp\\puro.exe"; &"\$env:temp\\puro.exe"';
-
-  final process = dcli.startFromArgs(
-    'powershell.exe',
-    ['-Command', command],
-    workingDirectory: downloadPath.path,
-    nothrow: true,
-    progress: progress,
-    terminal: progress == null,
-  );
-
-  return process.exitCode ?? -1;
-}
-
-int installPuroGlobalUnix(
-  String version,
-  Directory downloadPath,
-  dcli.Progress? progress,
-) {
-  final process = dcli.startFromArgs(
-    'bash',
-    [
-      '-c',
-      'curl -o- https://puro.dev/install.sh | PURO_VERSION="$version" bash',
-    ],
-    workingDirectory: downloadPath.path,
-    nothrow: true,
-    progress: progress,
-    terminal: progress == null,
-  );
-
-  return process.exitCode ?? -1;
-}
-
-int installPuroGlobalWindows(
-  String version,
-  Directory downloadPath,
-  dcli.Progress? progress,
-) {
-  final command =
-      'Invoke-WebRequest -Uri "https://puro.dev/builds/$version/windows-x64/puro.exe" -OutFile "\$env:temp\\puro.exe"; &"\$env:temp\\puro.exe" install-puro --promote"';
-
-  final process = dcli.startFromArgs(
-    'powershell.exe',
-    ['-Command', command],
-    workingDirectory: downloadPath.path,
-    nothrow: true,
-    progress: progress,
-    terminal: progress == null,
-  );
-
-  return process.exitCode ?? -1;
+/// Throws [PuroInstallationFailedException] when [bytes] don't have the
+/// SHA-256 pinned for [download]
+void verifyPuro2Checksum(List<int> bytes, Puro2Download download) {
+  final actual = sha256.convert(bytes).toString();
+  if (actual != download.sha256) {
+    print(
+      'Checksum mismatch for ${download.url}\n'
+      'expected sha256: ${download.sha256}\n'
+      'actual sha256:   $actual',
+    );
+    throw PuroInstallationFailedException();
+  }
 }

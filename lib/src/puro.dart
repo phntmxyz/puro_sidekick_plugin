@@ -44,25 +44,21 @@ Future<ProcessCompletion> puro(
   return ProcessCompletion(exitCode: exitCode);
 }
 
+/// Returns the puro2 executable, on the PATH or installed into the sidekick
+/// build folder
+///
+/// An old `puro` executable is ignored, the plugin installs puro2 next to it.
 File? getPuroPath() {
-  String? path;
-  // Try to find puro in PATH
-  final which = dcli.which('puro');
-  if (which.found) {
-    path = which.path;
+  final which = dcli.which('puro2');
+  if (which.found && which.path != null) {
+    return File(which.path!);
   }
-  if (path == null) {
-    final standalonePath = getPuroStandaloneBinPath();
-    if (standalonePath.existsSync()) {
-      final result = dcli.find(
-        'puro',
-        workingDirectory: standalonePath.path,
-        recursive: false,
-      );
-      path = result.firstLine;
-    }
+  final executableName = Platform.isWindows ? 'puro2.exe' : 'puro2';
+  final standalone = File('${getPuroStandaloneBinPath().path}$executableName');
+  if (standalone.existsSync()) {
+    return standalone;
   }
-  return path != null ? File(path) : null;
+  return null;
 }
 
 /// Returns the puro standalone bin path. It may not exist.
@@ -105,6 +101,6 @@ Set<String> parsePuroEnvironments(String output) {
 class PuroNotFoundException implements Exception {
   @override
   String toString() {
-    return 'Puro not found. Please install puro first. Visit https://puro.dev/';
+    return 'Puro2 not found. Please install puro2 first. Visit https://puro2.phntm.xyz/';
   }
 }

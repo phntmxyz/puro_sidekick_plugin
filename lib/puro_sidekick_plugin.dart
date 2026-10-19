@@ -33,10 +33,10 @@ Future<void> initializePuro(SdkInitializerContext context) async {
   // Check if puro is already installed
   if (puroPath != null && puroPath.existsSync()) {
     puroRootDir = puroPath.parent.parent;
-    printVerbose('Puro is already installed at ${puroRootDir.absolute.path}');
+    printVerbose('Puro2 is already installed at ${puroRootDir.absolute.path}');
     checkForUpdates = true;
   } else {
-    puroRootDir = installPuro();
+    puroRootDir = await installPuro();
   }
   dcli.env['PURO_ROOT'] = puroRootDir.absolute.path;
   printVerbose('PURO_ROOT: ${puroRootDir.absolute.path}');
@@ -45,34 +45,24 @@ Future<void> initializePuro(SdkInitializerContext context) async {
   if (checkForUpdates && !_alreadyCheckedForUpdate) {
     _alreadyCheckedForUpdate = true;
     printVerbose('Checking for updates...');
-    final latestVersion = Version.parse(getLatestPuroVersion());
-    printVerbose('Latest Puro version: $latestVersion');
+    final requiredVersion = Version.parse(puro2Version);
+    printVerbose('Required Puro2 version: $requiredVersion');
 
     final currentPuro = await getCurrentPuroVersion();
     final currentVersion = Version.parse(currentPuro.version);
     printVerbose(
-      'Current Puro version: $currentVersion - Standalone: ${currentPuro.standalone}',
+      'Current Puro2 version: $currentVersion - Standalone: ${currentPuro.standalone}',
     );
-    if (currentVersion < latestVersion) {
-      print('Puro is outdated. Updating to $latestVersion');
+    if (currentVersion < requiredVersion) {
+      print('Puro2 is outdated. Updating to $requiredVersion');
       if (currentPuro.standalone) {
-        puroRootDir = installPuro();
+        puroRootDir = await installPuroStandalone();
       } else {
-        final progress = Progress.capture();
-        try {
-          await puro(['upgrade-puro'], progress: progress);
-        } catch (e, stackTrace) {
-          print('puro upgrade-puro failed: $e');
-          print(stackTrace);
-          if (progress.lines.isNotEmpty) {
-            print('output:\n${progress.lines.join('\n')}');
-          }
-        }
-        puroRootDir = puroPath!.parent.parent;
+        puroRootDir = await installPuroGlobal(null);
       }
       dcli.env['PURO_ROOT'] = puroRootDir.absolute.path;
     } else {
-      printVerbose('Puro is up to date.');
+      printVerbose('Puro2 is up to date.');
     }
   }
 
@@ -231,7 +221,7 @@ Future<void> _bindPuroToProject(
 class PuroInstallationFailedException implements Exception {
   @override
   String toString() {
-    return 'Puro could not be installer. Please install puro first. Visit https://puro.dev/';
+    return 'Puro2 could not be installed. Please install puro2 first. Visit https://puro2.phntm.xyz/';
   }
 }
 
