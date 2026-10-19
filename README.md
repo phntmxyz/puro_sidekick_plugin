@@ -21,7 +21,7 @@ Install the plugin with the following command:
 After installation, the plugin is available in the Sidekick CLI.
 Afterward it will check if `puro2` is installed already, if not it will ask you to install `puro2` globally
 or if you want to use it locally for the current project.
-The plugin downloads puro2 2.0.0 from [GitHub Releases](https://github.com/phntmxyz/puro2/releases/tag/2.0.0) and checks its SHA-256 before running it.
+The plugin downloads puro2 2.0.0 from [GitHub Releases](https://github.com/phntmxyz/puro2/releases/tag/2.0.0).
 Set `SIDEKICK_PURO_INSTALL_GLOBAL=y` (or `n`) to skip the question, for example in CI.
 
 ```bash

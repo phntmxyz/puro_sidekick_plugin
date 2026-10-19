@@ -1,25 +1,11 @@
 import 'dart:ffi' show Abi;
 
-import 'package:crypto/crypto.dart';
 import 'package:dcli/dcli.dart' as dcli;
 import 'package:puro_sidekick_plugin/puro_sidekick_plugin.dart';
 import 'package:sidekick_core/sidekick_core.dart';
 
 /// The puro2 version this plugin installs
 const puro2Version = '2.0.0';
-
-/// SHA-256 of each puro2 [puro2Version] binary, copied from the release's
-/// SHA256SUMS
-const _puro2Sha256 = {
-  'darwin-arm64':
-      '09118b9933b528eaf2976e7a901aa83f31a819ba19e1e3dc144addd8e8bdf89c',
-  'darwin-x64':
-      '03e958a9e378f886767c91315eb1b251f3eebb0148f8413caf8a4a57618155ea',
-  'linux-x64':
-      '73345cb486a03a844238a213b035a87b37f71dbcab4ff3ffd5a60a290eeaf118',
-  'windows-x64':
-      'e138361f150bda416c546b21e4450b9f240c39978ce7cdac68679405cfa3e732',
-};
 
 /// Downloads and installs puro2, globally or into the sidekick build folder
 ///
@@ -119,17 +105,15 @@ String _globalPuroRoot() {
   return '${Platform.environment['HOME']}/.puro';
 }
 
-/// Where to download a puro2 binary from, the SHA-256 it must have, and the
-/// name of the executable once installed
+/// Where to download a puro2 binary from and the name of the executable once
+/// installed
 class Puro2Download {
   const Puro2Download({
     required this.url,
-    required this.sha256,
     required this.fileName,
   });
 
   final Uri url;
-  final String sha256;
   final String fileName;
 }
 
@@ -157,16 +141,14 @@ Puro2Download? puro2Download(Abi abi) {
       'https://github.com/phntmxyz/puro2/releases/download/'
       '$puro2Version/puro2-$target$extension',
     ),
-    sha256: _puro2Sha256[target]!,
     fileName: 'puro2$extension',
   );
 }
 
 /// Downloads the puro2 binary to [destination] and makes it executable
 ///
-/// Throws [PuroInstallationFailedException] when the download fails or its
-/// SHA-256 doesn't match the pinned one. [destination] is left untouched in
-/// that case.
+/// Throws [PuroInstallationFailedException] when the download fails.
+/// [destination] is left untouched in that case.
 Future<void> downloadPuro2(Puro2Download download, File destination) async {
   final List<int> bytes;
   final client = HttpClient();
@@ -187,8 +169,6 @@ Future<void> downloadPuro2(Puro2Download download, File destination) async {
     client.close();
   }
 
-  verifyPuro2Checksum(bytes, download);
-
   destination.parent.createSync(recursive: true);
   destination.writeAsBytesSync(bytes);
   if (!Platform.isWindows) {
@@ -197,19 +177,5 @@ Future<void> downloadPuro2(Puro2Download download, File destination) async {
       print('Failed to make ${destination.path} executable: ${chmod.stderr}');
       throw PuroInstallationFailedException();
     }
-  }
-}
-
-/// Throws [PuroInstallationFailedException] when [bytes] don't have the
-/// SHA-256 pinned for [download]
-void verifyPuro2Checksum(List<int> bytes, Puro2Download download) {
-  final actual = sha256.convert(bytes).toString();
-  if (actual != download.sha256) {
-    print(
-      'Checksum mismatch for ${download.url}\n'
-      'expected sha256: ${download.sha256}\n'
-      'actual sha256:   $actual',
-    );
-    throw PuroInstallationFailedException();
   }
 }

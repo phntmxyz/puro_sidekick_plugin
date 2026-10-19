@@ -4,7 +4,7 @@
 
 - **Breaking** Install and use [puro2](https://github.com/phntmxyz/puro2) 2.0.0, phntm's fork of Puro, instead of `puro`.
   puro.dev is gone, so the plugin couldn't install Puro anymore.
-  The binary is downloaded from GitHub Releases and its SHA-256 is checked before it runs.
+  The binary is downloaded from GitHub Releases.
   An existing `puro` installation is not used, puro2 is installed next to it and shares `~/.puro`.
   `getPuroPath()` returns the `puro2` executable, and `puro()` runs it.
 - The puro2 version is pinned by the plugin, the GitHub API isn't queried for the latest release anymore.
