@@ -47,7 +47,7 @@ Future<ProcessCompletion> puro(
 File? getPuroPath() {
   String? path;
   // Try to find puro in PATH
-  final which = dcli.which('puro');
+  final which = dcli.which('puro2');
   if (which.found) {
     path = which.path;
   }
@@ -55,7 +55,7 @@ File? getPuroPath() {
     final standalonePath = getPuroStandaloneBinPath();
     if (standalonePath.existsSync()) {
       final result = dcli.find(
-        'puro',
+        'puro2',
         workingDirectory: standalonePath.path,
         recursive: false,
       );
@@ -105,6 +105,6 @@ Set<String> parsePuroEnvironments(String output) {
 class PuroNotFoundException implements Exception {
   @override
   String toString() {
-    return 'Puro not found. Please install puro first. Visit https://puro.dev/';
+    return 'Puro2 not found. Please install puro2 first. Visit https://puro2.phntm.xyz/';
   }
 }

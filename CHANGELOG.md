@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.5.0
+
+- **Fix** Installing Puro failed because puro.dev is gone.
+  The plugin now installs [puro2](https://github.com/phntmxyz/puro2), phntm's fork of Puro, from GitHub Releases and runs `puro2` instead of `puro`.
+  puro2 uses the same `~/.puro` folder, so existing environments are reused.
+
 ## 1.4.1
 
 - **Fix** Standalone puro install downloaded the Intel `darwin-x64` binary on Apple Silicon, causing flutter commands to fail with `Bad CPU type in executable` (exit 86) when the user opted out of installing puro globally. Apple Silicon now downloads the `darwin-arm64` build.

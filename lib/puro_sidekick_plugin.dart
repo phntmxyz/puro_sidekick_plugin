@@ -231,7 +231,7 @@ Future<void> _bindPuroToProject(
 class PuroInstallationFailedException implements Exception {
   @override
   String toString() {
-    return 'Puro could not be installer. Please install puro first. Visit https://puro.dev/';
+    return 'Puro2 could not be installed. Please install puro2 first. Visit https://puro2.phntm.xyz/';
   }
 }
 

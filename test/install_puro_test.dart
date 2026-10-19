@@ -9,33 +9,33 @@ void main() {
     test('Apple Silicon picks the darwin-arm64 build', () {
       expect(
         puroStandaloneDownloadUrl('1.5.0', Abi.macosArm64),
-        'https://puro.dev/builds/1.5.0/darwin-arm64/puro',
+        'https://github.com/phntmxyz/puro2/releases/download/1.5.0/puro2-darwin-arm64',
       );
     });
 
     test('Intel Mac picks the darwin-x64 build', () {
       expect(
         puroStandaloneDownloadUrl('1.5.0', Abi.macosX64),
-        'https://puro.dev/builds/1.5.0/darwin-x64/puro',
+        'https://github.com/phntmxyz/puro2/releases/download/1.5.0/puro2-darwin-x64',
       );
     });
 
     test('Linux x64 picks the linux-x64 build', () {
       expect(
         puroStandaloneDownloadUrl('1.5.0', Abi.linuxX64),
-        'https://puro.dev/builds/1.5.0/linux-x64/puro',
+        'https://github.com/phntmxyz/puro2/releases/download/1.5.0/puro2-linux-x64',
       );
     });
 
     test('Windows x64 picks the windows-x64 build (.exe)', () {
       expect(
         puroStandaloneDownloadUrl('1.5.0', Abi.windowsX64),
-        'https://puro.dev/builds/1.5.0/windows-x64/puro.exe',
+        'https://github.com/phntmxyz/puro2/releases/download/1.5.0/puro2-windows-x64.exe',
       );
     });
 
-    test('returns null for architectures puro does not publish', () {
-      // Puro does not ship linux-arm64 or windows-arm64 builds.
+    test('returns null for architectures puro2 does not publish', () {
+      // puro2 does not ship linux-arm64 or windows-arm64 builds.
       expect(puroStandaloneDownloadUrl('1.5.0', Abi.linuxArm64), isNull);
       expect(puroStandaloneDownloadUrl('1.5.0', Abi.windowsArm64), isNull);
     });
@@ -43,7 +43,7 @@ void main() {
     test('embeds the requested version', () {
       expect(
         puroStandaloneDownloadUrl('2.0.0', Abi.macosArm64),
-        'https://puro.dev/builds/2.0.0/darwin-arm64/puro',
+        'https://github.com/phntmxyz/puro2/releases/download/2.0.0/puro2-darwin-arm64',
       );
     });
   });

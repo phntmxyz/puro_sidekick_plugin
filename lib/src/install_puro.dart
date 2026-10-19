@@ -5,7 +5,7 @@ import 'package:dcli/dcli.dart' as dcli;
 import 'package:puro_sidekick_plugin/puro_sidekick_plugin.dart';
 import 'package:sidekick_core/sidekick_core.dart';
 
-const puroFallbackVersion = '1.5.0';
+const puroFallbackVersion = '2.0.0';
 
 /// Executes Flutter CLI via puro
 ///
@@ -98,22 +98,22 @@ Directory installPuroStandalone(String version, dcli.Progress? progress) {
 /// Returns the puro standalone download URL for [version] on the given [abi],
 /// or `null` if puro does not publish a build for that target.
 ///
-/// Puro currently publishes binaries for `darwin-x64`, `darwin-arm64`,
+/// puro2 currently publishes binaries for `darwin-x64`, `darwin-arm64`,
 /// `linux-x64` and `windows-x64`. On Apple Silicon (`Abi.macosArm64`) the
 /// arm64 build must be used — running the x64 binary without Rosetta 2
 /// installed fails with macOS' "Bad CPU type in executable" (exit 86).
 String? puroStandaloneDownloadUrl(String version, Abi abi) {
   if (abi == Abi.macosArm64) {
-    return 'https://puro.dev/builds/$version/darwin-arm64/puro';
+    return 'https://github.com/phntmxyz/puro2/releases/download/$version/puro2-darwin-arm64';
   }
   if (abi == Abi.macosX64) {
-    return 'https://puro.dev/builds/$version/darwin-x64/puro';
+    return 'https://github.com/phntmxyz/puro2/releases/download/$version/puro2-darwin-x64';
   }
   if (abi == Abi.linuxX64) {
-    return 'https://puro.dev/builds/$version/linux-x64/puro';
+    return 'https://github.com/phntmxyz/puro2/releases/download/$version/puro2-linux-x64';
   }
   if (abi == Abi.windowsX64) {
-    return 'https://puro.dev/builds/$version/windows-x64/puro.exe';
+    return 'https://github.com/phntmxyz/puro2/releases/download/$version/puro2-windows-x64.exe';
   }
   return null;
 }
@@ -184,7 +184,7 @@ String getLatestPuroVersion({
 String? _fetchLatestPuroReleaseJson() {
   final output = dcli.startFromArgs(
     'curl',
-    ['https://api.github.com/repos/pingbird/puro/releases?per_page=1&page=1'],
+    ['https://api.github.com/repos/phntmxyz/puro2/releases?per_page=1&page=1'],
     progress: Progress.capture(captureStderr: false),
   );
   if (output.exitCode != 0) {
@@ -203,7 +203,7 @@ int installPuroStandaloneMacOs(
     'bash',
     [
       '-c',
-      'curl -O $downloadUrl',
+      'curl -fL -o puro2 $downloadUrl',
     ],
     workingDirectory: downloadPath.path,
     nothrow: true,
@@ -219,7 +219,7 @@ int installPuroStandaloneMacOs(
     'bash',
     [
       '-c',
-      'chmod +x puro',
+      'chmod +x puro2',
     ],
     workingDirectory: downloadPath.path,
     nothrow: true,
@@ -241,7 +241,7 @@ int installPuroStandaloneLinux(
     'bash',
     [
       '-c',
-      'curl -O $downloadUrl',
+      'curl -fL -o puro2 $downloadUrl',
     ],
     workingDirectory: downloadPath.path,
     nothrow: true,
@@ -257,7 +257,7 @@ int installPuroStandaloneLinux(
     'bash',
     [
       '-c',
-      'chmod +x puro',
+      'chmod +x puro2',
     ],
     workingDirectory: downloadPath.path,
     nothrow: true,
@@ -276,7 +276,7 @@ int installPuroStandaloneWindows(
   dcli.Progress? progress,
 ) {
   final command =
-      'Invoke-WebRequest -Uri "$downloadUrl" -OutFile "\$env:temp\\puro.exe"; &"\$env:temp\\puro.exe"';
+      'Invoke-WebRequest -Uri "$downloadUrl" -OutFile "\$env:temp\\puro2.exe"; &"\$env:temp\\puro2.exe"';
 
   final process = dcli.startFromArgs(
     'powershell.exe',
@@ -299,7 +299,7 @@ int installPuroGlobalUnix(
     'bash',
     [
       '-c',
-      'curl -o- https://puro.dev/install.sh | PURO_VERSION="$version" bash',
+      'curl -fL https://github.com/phntmxyz/puro2/releases/download/$version/install.sh | PURO_VERSION="$version" bash',
     ],
     workingDirectory: downloadPath.path,
     nothrow: true,
@@ -316,7 +316,7 @@ int installPuroGlobalWindows(
   dcli.Progress? progress,
 ) {
   final command =
-      'Invoke-WebRequest -Uri "https://puro.dev/builds/$version/windows-x64/puro.exe" -OutFile "\$env:temp\\puro.exe"; &"\$env:temp\\puro.exe" install-puro --promote"';
+      'Invoke-WebRequest -Uri "https://github.com/phntmxyz/puro2/releases/download/$version/puro2-windows-x64.exe" -OutFile "\$env:temp\\puro2.exe"; &"\$env:temp\\puro2.exe" install-puro2 --promote"';
 
   final process = dcli.startFromArgs(
     'powershell.exe',
