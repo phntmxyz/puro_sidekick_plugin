@@ -1,50 +1,357 @@
 import 'dart:ffi' show Abi;
+import 'dart:io';
 
 import 'package:puro_sidekick_plugin/src/install_puro.dart';
 import 'package:test/test.dart';
 
 void main() {
-  group('puro2Download', () {
+  group('puroStandaloneDownloadUrl', () {
     test('Apple Silicon picks the darwin-arm64 build', () {
-      final download = puro2Download(Abi.macosArm64)!;
       expect(
-        download.url.toString(),
-        'https://github.com/phntmxyz/puro2/releases/download/2.0.0/puro2-darwin-arm64',
+        puroStandaloneDownloadUrl('1.5.0', Abi.macosArm64),
+        'https://github.com/phntmxyz/puro2/releases/download/1.5.0/puro2-darwin-arm64',
       );
-      expect(download.fileName, 'puro2');
     });
 
     test('Intel Mac picks the darwin-x64 build', () {
-      final download = puro2Download(Abi.macosX64)!;
       expect(
-        download.url.toString(),
-        'https://github.com/phntmxyz/puro2/releases/download/2.0.0/puro2-darwin-x64',
+        puroStandaloneDownloadUrl('1.5.0', Abi.macosX64),
+        'https://github.com/phntmxyz/puro2/releases/download/1.5.0/puro2-darwin-x64',
       );
-      expect(download.fileName, 'puro2');
     });
 
     test('Linux x64 picks the linux-x64 build', () {
-      final download = puro2Download(Abi.linuxX64)!;
       expect(
-        download.url.toString(),
-        'https://github.com/phntmxyz/puro2/releases/download/2.0.0/puro2-linux-x64',
+        puroStandaloneDownloadUrl('1.5.0', Abi.linuxX64),
+        'https://github.com/phntmxyz/puro2/releases/download/1.5.0/puro2-linux-x64',
       );
-      expect(download.fileName, 'puro2');
     });
 
     test('Windows x64 picks the windows-x64 build (.exe)', () {
-      final download = puro2Download(Abi.windowsX64)!;
       expect(
-        download.url.toString(),
-        'https://github.com/phntmxyz/puro2/releases/download/2.0.0/puro2-windows-x64.exe',
+        puroStandaloneDownloadUrl('1.5.0', Abi.windowsX64),
+        'https://github.com/phntmxyz/puro2/releases/download/1.5.0/puro2-windows-x64.exe',
       );
-      expect(download.fileName, 'puro2.exe');
     });
 
     test('returns null for architectures puro2 does not publish', () {
       // puro2 does not ship linux-arm64 or windows-arm64 builds.
-      expect(puro2Download(Abi.linuxArm64), isNull);
-      expect(puro2Download(Abi.windowsArm64), isNull);
+      expect(puroStandaloneDownloadUrl('1.5.0', Abi.linuxArm64), isNull);
+      expect(puroStandaloneDownloadUrl('1.5.0', Abi.windowsArm64), isNull);
+    });
+
+    test('embeds the requested version', () {
+      expect(
+        puroStandaloneDownloadUrl('2.0.0', Abi.macosArm64),
+        'https://github.com/phntmxyz/puro2/releases/download/2.0.0/puro2-darwin-arm64',
+      );
+    });
+  });
+
+  group('getLatestPuroVersion', () {
+    late Directory tempDir;
+    late File cacheFile;
+
+    setUp(() {
+      tempDir = Directory.systemTemp.createTempSync('puro_test_');
+      cacheFile = File('${tempDir.path}/puro_latest_version.txt');
+    });
+
+    tearDown(() {
+      tempDir.deleteSync(recursive: true);
+    });
+
+    test('parses valid GitHub releases response', () {
+      const validResponse = '''
+[
+  {
+    "tag_name": "1.5.0",
+    "name": "1.5.0",
+    "draft": false,
+    "prerelease": false
+  }
+]
+''';
+      final version = getLatestPuroVersion(
+        cacheFile: cacheFile,
+        githubReleasesProvider: () => validResponse,
+      );
+      expect(version, '1.5.0');
+    });
+
+    test('parses response with multiple releases (takes first)', () {
+      const multipleReleases = '''
+[
+  {"tag_name": "2.0.0"},
+  {"tag_name": "1.5.0"},
+  {"tag_name": "1.4.0"}
+]
+''';
+      final version = getLatestPuroVersion(
+        cacheFile: cacheFile,
+        githubReleasesProvider: () => multipleReleases,
+      );
+      expect(version, '2.0.0');
+    });
+
+    test('returns fallback for rate limit error response (Map instead of List)',
+        () {
+      const rateLimitResponse = '''
+{
+  "message": "API rate limit exceeded for 192.168.1.1.",
+  "documentation_url": "https://docs.github.com/rest/overview/resources-in-the-rest-api#rate-limiting"
+}
+''';
+      final version = getLatestPuroVersion(
+        cacheFile: cacheFile,
+        githubReleasesProvider: () => rateLimitResponse,
+      );
+      expect(version, puroFallbackVersion);
+    });
+
+    test('returns fallback for empty array response', () {
+      const emptyArray = '[]';
+      final version = getLatestPuroVersion(
+        cacheFile: cacheFile,
+        githubReleasesProvider: () => emptyArray,
+      );
+      expect(version, puroFallbackVersion);
+    });
+
+    test('returns fallback for invalid JSON', () {
+      const invalidJson = 'not valid json';
+      final version = getLatestPuroVersion(
+        cacheFile: cacheFile,
+        githubReleasesProvider: () => invalidJson,
+      );
+      expect(version, puroFallbackVersion);
+    });
+
+    test('returns fallback for missing tag_name field', () {
+      const missingTagName = '''
+[
+  {
+    "name": "1.5.0",
+    "draft": false
+  }
+]
+''';
+      final version = getLatestPuroVersion(
+        cacheFile: cacheFile,
+        githubReleasesProvider: () => missingTagName,
+      );
+      expect(version, puroFallbackVersion);
+    });
+
+    test('returns fallback for null tag_name', () {
+      const nullTagName = '''
+[
+  {
+    "tag_name": null,
+    "name": "1.5.0"
+  }
+]
+''';
+      final version = getLatestPuroVersion(
+        cacheFile: cacheFile,
+        githubReleasesProvider: () => nullTagName,
+      );
+      expect(version, puroFallbackVersion);
+    });
+
+    test('returns fallback when provider throws', () {
+      final version = getLatestPuroVersion(
+        cacheFile: cacheFile,
+        githubReleasesProvider: () => throw Exception('Network error'),
+      );
+      expect(version, puroFallbackVersion);
+    });
+
+    test('handles HTML error page response', () {
+      const htmlResponse = '''
+<!DOCTYPE html>
+<html>
+<head><title>503 Service Unavailable</title></head>
+<body>Service Unavailable</body>
+</html>
+''';
+      final version = getLatestPuroVersion(
+        cacheFile: cacheFile,
+        githubReleasesProvider: () => htmlResponse,
+      );
+      expect(version, puroFallbackVersion);
+    });
+
+    test('caches result to file and returns cached version on subsequent calls',
+        () {
+      var callCount = 0;
+      String provider() {
+        callCount++;
+        return '[{"tag_name": "1.5.0"}]';
+      }
+
+      // First call - fetches and caches
+      final version1 = getLatestPuroVersion(
+        cacheFile: cacheFile,
+        githubReleasesProvider: provider,
+      );
+      expect(version1, '1.5.0');
+      expect(callCount, 1);
+      expect(cacheFile.existsSync(), isTrue);
+      expect(cacheFile.readAsStringSync(), '1.5.0');
+
+      // Second call - should use cache, provider not called
+      final version2 = getLatestPuroVersion(
+        cacheFile: cacheFile,
+        githubReleasesProvider: provider,
+      );
+      expect(version2, '1.5.0');
+      expect(callCount, 1); // Still 1, provider wasn't called
+    });
+
+    test('clearing cache by deleting file forces new fetch', () {
+      var callCount = 0;
+      String provider() {
+        callCount++;
+        return '[{"tag_name": "1.$callCount.0"}]';
+      }
+
+      // First call
+      final version1 = getLatestPuroVersion(
+        cacheFile: cacheFile,
+        githubReleasesProvider: provider,
+      );
+      expect(version1, '1.1.0');
+      expect(callCount, 1);
+
+      // Delete cache file
+      cacheFile.deleteSync();
+
+      // Second call - should fetch again
+      final version2 = getLatestPuroVersion(
+        cacheFile: cacheFile,
+        githubReleasesProvider: provider,
+      );
+      expect(version2, '1.2.0');
+      expect(callCount, 2);
+    });
+
+    test('expired cache (older than 24h) triggers new fetch', () {
+      var callCount = 0;
+      String provider() {
+        callCount++;
+        return '[{"tag_name": "1.$callCount.0"}]';
+      }
+
+      // First call - creates cache
+      final version1 = getLatestPuroVersion(
+        cacheFile: cacheFile,
+        githubReleasesProvider: provider,
+      );
+      expect(version1, '1.1.0');
+      expect(callCount, 1);
+
+      // Simulate expired cache by setting last modified to 25 hours ago
+      final expiredTime = DateTime.now().subtract(const Duration(hours: 25));
+      cacheFile.setLastModifiedSync(expiredTime);
+
+      // Second call - should fetch again because cache expired
+      final version2 = getLatestPuroVersion(
+        cacheFile: cacheFile,
+        githubReleasesProvider: provider,
+      );
+      expect(version2, '1.2.0');
+      expect(callCount, 2);
+    });
+
+    test('valid cache (less than 24h old) does not trigger fetch', () {
+      var callCount = 0;
+      String provider() {
+        callCount++;
+        return '[{"tag_name": "1.$callCount.0"}]';
+      }
+
+      // First call - creates cache
+      final version1 = getLatestPuroVersion(
+        cacheFile: cacheFile,
+        githubReleasesProvider: provider,
+      );
+      expect(version1, '1.1.0');
+      expect(callCount, 1);
+
+      // Simulate cache that's 23 hours old (still valid)
+      final validTime = DateTime.now().subtract(const Duration(hours: 23));
+      cacheFile.setLastModifiedSync(validTime);
+
+      // Second call - should use cache
+      final version2 = getLatestPuroVersion(
+        cacheFile: cacheFile,
+        githubReleasesProvider: provider,
+      );
+      expect(version2, '1.1.0');
+      expect(callCount, 1); // Still 1, provider wasn't called
+    });
+
+    test('empty cache file triggers new fetch', () {
+      var callCount = 0;
+      String provider() {
+        callCount++;
+        return '[{"tag_name": "1.5.0"}]';
+      }
+
+      // Create empty cache file
+      cacheFile.createSync(recursive: true);
+      cacheFile.writeAsStringSync('');
+
+      final version = getLatestPuroVersion(
+        cacheFile: cacheFile,
+        githubReleasesProvider: provider,
+      );
+      expect(version, '1.5.0');
+      expect(callCount, 1); // Provider was called because cache was empty
+    });
+
+    test('cache file with only whitespace triggers new fetch', () {
+      var callCount = 0;
+      String provider() {
+        callCount++;
+        return '[{"tag_name": "1.5.0"}]';
+      }
+
+      // Create cache file with only whitespace
+      cacheFile.createSync(recursive: true);
+      cacheFile.writeAsStringSync('   \n\t  ');
+
+      final version = getLatestPuroVersion(
+        cacheFile: cacheFile,
+        githubReleasesProvider: provider,
+      );
+      expect(version, '1.5.0');
+      // Provider was called because cache was effectively empty
+      expect(callCount, 1);
+    });
+
+    test('cache file with invalid content is used as-is', () {
+      // Note: The cache file stores plain version strings, not JSON.
+      // If garbage is in the cache, it will be returned as-is until expired.
+      // This tests the current behavior - invalid cache content is trusted.
+      var callCount = 0;
+      String provider() {
+        callCount++;
+        return '[{"tag_name": "1.5.0"}]';
+      }
+
+      // Create cache file with garbage content
+      cacheFile.createSync(recursive: true);
+      cacheFile.writeAsStringSync('not-a-valid-version');
+
+      final version = getLatestPuroVersion(
+        cacheFile: cacheFile,
+        githubReleasesProvider: provider,
+      );
+      // Current behavior: returns the garbage content without validation
+      expect(version, 'not-a-valid-version');
+      expect(callCount, 0); // Provider was NOT called - cache was used
     });
   });
 }

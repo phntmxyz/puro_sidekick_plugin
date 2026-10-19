@@ -33,10 +33,10 @@ Future<void> initializePuro(SdkInitializerContext context) async {
   // Check if puro is already installed
   if (puroPath != null && puroPath.existsSync()) {
     puroRootDir = puroPath.parent.parent;
-    printVerbose('Puro2 is already installed at ${puroRootDir.absolute.path}');
+    printVerbose('Puro is already installed at ${puroRootDir.absolute.path}');
     checkForUpdates = true;
   } else {
-    puroRootDir = await installPuro();
+    puroRootDir = installPuro();
   }
   dcli.env['PURO_ROOT'] = puroRootDir.absolute.path;
   printVerbose('PURO_ROOT: ${puroRootDir.absolute.path}');
@@ -45,24 +45,34 @@ Future<void> initializePuro(SdkInitializerContext context) async {
   if (checkForUpdates && !_alreadyCheckedForUpdate) {
     _alreadyCheckedForUpdate = true;
     printVerbose('Checking for updates...');
-    final requiredVersion = Version.parse(puro2Version);
-    printVerbose('Required Puro2 version: $requiredVersion');
+    final latestVersion = Version.parse(getLatestPuroVersion());
+    printVerbose('Latest Puro version: $latestVersion');
 
     final currentPuro = await getCurrentPuroVersion();
     final currentVersion = Version.parse(currentPuro.version);
     printVerbose(
-      'Current Puro2 version: $currentVersion - Standalone: ${currentPuro.standalone}',
+      'Current Puro version: $currentVersion - Standalone: ${currentPuro.standalone}',
     );
-    if (currentVersion < requiredVersion) {
-      print('Puro2 is outdated. Updating to $requiredVersion');
+    if (currentVersion < latestVersion) {
+      print('Puro is outdated. Updating to $latestVersion');
       if (currentPuro.standalone) {
-        puroRootDir = await installPuroStandalone();
+        puroRootDir = installPuro();
       } else {
-        puroRootDir = await installPuroGlobal(null);
+        final progress = Progress.capture();
+        try {
+          await puro(['upgrade-puro'], progress: progress);
+        } catch (e, stackTrace) {
+          print('puro upgrade-puro failed: $e');
+          print(stackTrace);
+          if (progress.lines.isNotEmpty) {
+            print('output:\n${progress.lines.join('\n')}');
+          }
+        }
+        puroRootDir = puroPath!.parent.parent;
       }
       dcli.env['PURO_ROOT'] = puroRootDir.absolute.path;
     } else {
-      printVerbose('Puro2 is up to date.');
+      printVerbose('Puro is up to date.');
     }
   }
 
