@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **Fix** Keep the Puro2 release cache separate from legacy Puro releases so upgrading does not reuse an unavailable download version.
+
 ## 1.5.0
 
 - **Fix** Installing Puro failed because puro.dev is gone.
