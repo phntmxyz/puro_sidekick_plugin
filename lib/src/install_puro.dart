@@ -130,7 +130,8 @@ bool _isCacheValid(File cacheFile, {Duration ttl = _cacheTtl}) {
 
 /// Fetches the latest Puro version from GitHub releases.
 ///
-/// The result is cached in the build folder for 24 hours.
+/// The result is cached separately from legacy Puro releases in the build
+/// folder for 24 hours.
 /// [githubReleasesProvider] can be overridden for testing.
 /// [cacheFile] can be overridden for testing.
 String getLatestPuroVersion({
@@ -138,7 +139,7 @@ String getLatestPuroVersion({
   File? cacheFile,
 }) {
   cacheFile ??= File(
-    '${SidekickContext.sidekickPackage.buildDir.path}/puro_latest_version.txt',
+    '${SidekickContext.sidekickPackage.buildDir.path}/puro2_latest_version.txt',
   );
 
   // Return cached version if available and not expired

@@ -1,7 +1,9 @@
 import 'dart:ffi' show Abi;
 import 'dart:io';
 
+import 'package:dcli/dcli.dart' as dcli;
 import 'package:puro_sidekick_plugin/src/install_puro.dart';
+import 'package:sidekick_core/sidekick_core.dart' show SidekickContext;
 import 'package:test/test.dart';
 
 void main() {
@@ -59,6 +61,41 @@ void main() {
 
     tearDown(() {
       tempDir.deleteSync(recursive: true);
+    });
+
+    test('keeps legacy Puro releases separate from the Puro2 cache', () async {
+      File('${tempDir.path}/pubspec.yaml')
+          .writeAsStringSync('name: cache_test_sidekick\n');
+      final buildDir = Directory('${tempDir.path}/build')..createSync();
+      final legacyCache = File('${buildDir.path}/puro_latest_version.txt')
+        ..writeAsStringSync('1.5.0');
+      expect(legacyCache.readAsStringSync(), '1.5.0');
+
+      await dcli.withEnvironmentAsync(() async {
+        expect(SidekickContext.sidekickPackage.buildDir.path, buildDir.path);
+        var fetchCount = 0;
+        String provider() {
+          fetchCount++;
+          return '[{"tag_name": "2.0.0"}]';
+        }
+
+        expect(
+          getLatestPuroVersion(githubReleasesProvider: provider),
+          '2.0.0',
+        );
+        expect(fetchCount, 1);
+        expect(
+          File('${buildDir.path}/puro2_latest_version.txt').readAsStringSync(),
+          '2.0.0',
+        );
+        expect(legacyCache.readAsStringSync(), '1.5.0');
+
+        expect(
+          getLatestPuroVersion(githubReleasesProvider: provider),
+          '2.0.0',
+        );
+        expect(fetchCount, 1);
+      }, environment: {'SIDEKICK_PACKAGE_HOME': tempDir.path});
     });
 
     test('parses valid GitHub releases response', () {
